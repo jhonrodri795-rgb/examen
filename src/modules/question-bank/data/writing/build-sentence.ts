@@ -1,0 +1,77 @@
+import type { BuildSentenceSet, Difficulty } from '../../types';
+
+/**
+ * Build a Sentence (Writing, formato 2026): ordenar fragmentos para formar una
+ * respuesta gramatical y adecuada al contexto.
+ */
+function bs(
+  id: string,
+  difficulty: Difficulty,
+  context: string,
+  chunks: string[],
+  endPunctuation: '.' | '?',
+  explanation: string,
+  extra: Partial<Pick<BuildSentenceSet, 'distractors' | 'acceptedOrders'>> = {},
+): BuildSentenceSet {
+  return {
+    id,
+    section: 'writing',
+    task: 'build-sentence',
+    title: context,
+    topic: 'campus-life',
+    difficulty,
+    context: { speaker: 'Classmate', text: context },
+    chunks,
+    endPunctuation,
+    explanation,
+    ...extra,
+  };
+}
+
+export const sets: BuildSentenceSet[] = [
+  bs('wr-bs-museum', 'easy', 'What did you think of the museum?', ['I', 'really enjoyed', 'the new', 'photography exhibit'], '.',
+    'Orden básico sujeto + verbo + objeto. "The new" precede al sustantivo compuesto "photography exhibit".'),
+  bs('wr-bs-after-class', 'easy', 'Where are you going after class?', ["I'm heading", 'to the library', 'to return', 'some books'], '.',
+    'Tras "heading" va el destino ("to the library") y después el propósito con infinitivo ("to return some books").'),
+  bs('wr-bs-moving', 'easy', 'Can you help me move on Saturday?', ["I'd be happy", 'to help', 'if you', 'start after ten'], '.',
+    '"Be happy + to + infinitivo"; la condición ("if you start after ten") va al final.'),
+  bs('wr-bs-meeting', 'easy', "Why weren't you at the meeting?", ['I had', "a doctor's appointment", 'that I', "couldn't reschedule"], '.',
+    'Oración relativa: "an appointment that I couldn\'t reschedule". El relativo "that" sigue al sustantivo que describe.'),
+  bs('wr-bs-cafeteria-sunday', 'easy', 'Is the cafeteria open on Sundays?', ['It opens', 'at noon', 'but closes', 'earlier than usual'], '.',
+    'Dos verbos coordinados con "but" que comparten sujeto: "It opens at noon but closes earlier than usual".'),
+  bs('wr-bs-next-term', 'easy', 'Which course are you taking next term?', ["I'm planning", 'to sign up', 'for an introductory', 'economics class'], '.',
+    '"Plan to + infinitivo" y "sign up for + sustantivo". El adjetivo "introductory" va antes de "economics class".'),
+  bs('wr-bs-commute', 'easy', 'How do you get to campus?', ['I usually', 'take the bus', "unless it's", 'raining heavily'], '.',
+    'El adverbio de frecuencia "usually" va antes del verbo principal; "unless" introduce la excepción.'),
+  bs('wr-bs-debate', 'medium', "I'm thinking about joining the debate team.", ['Do you know', 'how often', 'the team', 'practices', 'each week'], '?',
+    'Pregunta indirecta: tras "Do you know", la cláusula usa orden afirmativo ("how often the team practices"), no "does the team practice".',
+    { distractors: ['does'] }),
+  bs('wr-bs-deadline', 'medium', 'The professor extended the deadline.', ['Did she', 'say', 'when', 'the new due date', 'is'], '?',
+    'Pregunta indirecta incrustada: "when the new due date is" (sujeto + verbo), no "when is the new due date".'),
+  bs('wr-bs-lost-notes', 'medium', "I lost my notes from yesterday's lecture.", ['You can', 'borrow mine', 'as long as', 'you return them', 'by Friday'], '.',
+    '"As long as" (siempre que) introduce una condición; "by Friday" indica el plazo al final.'),
+  bs('wr-bs-paper-topic', 'medium', 'Have you decided on a topic for your paper?', ["I'm still", 'trying to decide', 'between', 'two different', 'ideas'], '.',
+    '"Still" va después del auxiliar "am"; "decide between + plural".'),
+  bs('wr-bs-lab-closed', 'medium', 'Why is the lab closed today?', ['The technicians', 'are replacing', 'some of the', 'equipment that', 'stopped working'], '.',
+    'Sujeto + presente continuo + objeto con oración relativa ("equipment that stopped working").'),
+  bs('wr-bs-study-place', 'medium', 'Can you recommend a good place to study?', ['The reading room', 'on the fourth floor', 'is quiet', 'and rarely', 'crowded'], '.',
+    'El sintagma preposicional "on the fourth floor" modifica al sujeto y va antes del verbo "is".'),
+  bs('wr-bs-workshop', 'medium', 'What time does the workshop start?', ["I'm not sure,", 'but', 'I think', 'it starts', 'at three'], '.',
+    'Se responde con cautela: "I\'m not sure, but I think it starts at three". "Starting" no forma un verbo conjugado.',
+    { distractors: ['starting'] }),
+  bs('wr-bs-delayed-flight', 'hard', 'Our flight was delayed by four hours.', ['That must have been', 'frustrating,', 'especially after', 'such a long', 'trip'], '.',
+    '"Must have been" expresa deducción sobre el pasado. "Such a + adjetivo + sustantivo": "such a long trip".'),
+  bs('wr-bs-committee', 'hard', 'Did the committee approve your proposal?', ['They said', 'they would', 'let me know', 'whether it', 'was accepted', 'next week'], '.',
+    'Estilo indirecto: "They said they would let me know whether it was accepted". El complemento temporal puede ir al final o tras "know".',
+    { acceptedOrders: [['They said', 'they would', 'let me know', 'next week', 'whether it', 'was accepted']] }),
+  bs('wr-bs-switch-majors', 'hard', 'Why did you switch majors?', ['I realized', 'that what', 'I enjoyed most', 'was working', 'with data'], '.',
+    'Cláusula nominal con "what" como sujeto: "what I enjoyed most was working with data".'),
+  bs('wr-bs-software', 'hard', 'Is the new software easy to use?', ['Once you', 'get used to', 'the interface,', 'it is', 'surprisingly intuitive'], '.',
+    '"Get used to + sustantivo"; el adverbio "surprisingly" modifica al adjetivo "intuitive" ("surprising" sería un adjetivo).',
+    { distractors: ['surprising'] }),
+  bs('wr-bs-error', 'hard', 'Should we tell the professor about the error?', ['I think', 'she would', 'appreciate', 'knowing about it', 'before grading', 'the exams'], '.',
+    '"Appreciate" va seguido de gerundio ("knowing"); "before + gerundio" ("before grading the exams").'),
+  bs('wr-bs-database', 'hard', 'I found a great article for our project.', ['Could you', 'tell me', 'which database', 'you used', 'to find it'], '?',
+    'Pregunta indirecta cortés: tras "Could you tell me", orden sujeto + verbo ("which database you used"), no "did you use".',
+    { distractors: ['did you use'] }),
+];

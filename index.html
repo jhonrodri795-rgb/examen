@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Plataforma local de práctica y simulación del TOEFL iBT (formato 2026)." />
+    <meta name="color-scheme" content="light dark" />
+    <title>TOEFL Prep Studio</title>
+    <script>
+      // Evita el parpadeo de tema antes de que cargue React.
+      try {
+        var t = localStorage.getItem('toefl.theme') || 'system';
+        var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
