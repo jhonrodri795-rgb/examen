@@ -27,12 +27,21 @@ Funciona sin registro y sin servidores externos: todo el progreso se guarda en e
 
 ## Inicio rápido
 
-Requisitos: **Node.js ≥ 22.22** y npm.
+### Opción A — en tu ordenador (experiencia completa, con micrófono)
+
+Requisitos: **Node.js ≥ 22.22**, npm y Git.
 
 ```bash
+git clone https://github.com/jhonrodri795-rgb/examen.git
+cd examen
+git checkout claude/toefl-simulation-platform-xxarpc
 npm install
-npm run dev          # http://localhost:5173  (frontend + API en un solo proceso)
+npm run dev          # abre http://localhost:5173  (frontend + API en un solo proceso)
 ```
+
+### Opción B — versión publicada (sin instalar nada)
+
+`npm run build:artifact` genera `dist-artifact/toefl-prep-studio.html`, un único archivo con toda la aplicación que puede publicarse como página. En esa versión no hay servidor (sin transcripción ni IA) y el visor no permite el micrófono, así que Speaking no puede grabar; todo lo demás funciona y el progreso se guarda en el navegador.
 
 Producción local:
 

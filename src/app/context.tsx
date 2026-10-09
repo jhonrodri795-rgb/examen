@@ -3,6 +3,7 @@ import { ShieldCheck } from 'lucide-react';
 import type { ServerCapabilities } from '@shared/speaking-types';
 import { Alert, Button, Dialog } from '@/components/ui';
 import { getCapabilities } from '@/lib/api';
+import { STATIC_BUILD } from '@/lib/runtime';
 import { builtinSets, buildBank, type QuestionBank } from '@/modules/question-bank/registry';
 import { DEFAULT_SETTINGS, applyTheme, loadSettings, persistSettings, type Settings } from '@/modules/settings/settings';
 import { MicrophoneManager, type MicState } from '@/modules/speaking/microphone';
@@ -37,7 +38,13 @@ function SettingsProvider({ children }: { children: ReactNode }) {
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
     const onChange = () => applyTheme('system', settings.largeText);
     mq?.addEventListener('change', onChange);
-    return () => mq?.removeEventListener('change', onChange);
+    // El visor de claude.ai indica su tema con data-theme en el elemento raíz.
+    const obs = new MutationObserver(onChange);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => {
+      mq?.removeEventListener('change', onChange);
+      obs.disconnect();
+    };
   }, [settings.theme, settings.largeText]);
 
   const update = useCallback((patch: Partial<Settings>) => {
@@ -71,6 +78,7 @@ function BankProvider({ children }: { children: ReactNode }) {
   const [audio, setAudio] = useState<Record<string, string>>({});
   // Grabaciones opcionales: public/audio/manifest.json → { "<setId>": "<archivo>" }.
   useEffect(() => {
+    if (STATIC_BUILD) return;
     fetch('/audio/manifest.json')
       .then((r) => (r.ok ? r.json() : {}))
       .then((m: unknown) => {

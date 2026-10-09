@@ -1,5 +1,6 @@
-import { createBrowserRouter, isRouteErrorResponse, Link, useRouteError } from 'react-router';
-import { Alert, Button } from '@/components/ui';
+import { createBrowserRouter, createMemoryRouter, isRouteErrorResponse, Link, useRouteError, type RouteObject } from 'react-router';
+import { STATIC_BUILD } from '@/lib/runtime';
+import { Alert, Button, Spinner } from '@/components/ui';
 import { Layout } from './Layout';
 import { DashboardPage } from '@/modules/dashboard/DashboardPage';
 
@@ -30,12 +31,19 @@ function NotFoundPage() {
   );
 }
 
-export const router = createBrowserRouter([
-  { path: '/exam/:attemptId', lazy: async () => ({ Component: (await import('@/modules/exam-engine/ui/ExamRunnerPage')).ExamRunnerPage }), errorElement: <ErrorPage /> },
+const loading = (
+  <div className="flex min-h-dvh items-center justify-center">
+    <Spinner />
+  </div>
+);
+
+const routes: RouteObject[] = [
+  { path: '/exam/:attemptId', lazy: async () => ({ Component: (await import('@/modules/exam-engine/ui/ExamRunnerPage')).ExamRunnerPage }), errorElement: <ErrorPage />, hydrateFallbackElement: loading },
   {
     path: '/',
     element: <Layout />,
     errorElement: <ErrorPage />,
+    hydrateFallbackElement: loading,
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'exam/new', lazy: async () => ({ Component: (await import('@/modules/exam-engine/ui/ExamSetupPage')).ExamSetupPage }) },
@@ -52,4 +60,7 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
-]);
+];
+
+// En la versión publicada la URL pertenece al visor: se navega en memoria.
+export const router = STATIC_BUILD ? createMemoryRouter(routes) : createBrowserRouter(routes);

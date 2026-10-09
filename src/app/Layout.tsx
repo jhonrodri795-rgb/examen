@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import {
   BarChart3, BookOpen, GraduationCap, History, Home, Lightbulb, Library, Menu, Mic, Moon, NotebookPen, PenLine, PlayCircle, Settings, Sun, X,
@@ -58,9 +58,22 @@ function Brand() {
   );
 }
 
+/** Tema aplicado realmente (clase en <html>), actualizado cuando cambia. */
+function useAppliedDark(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      const obs = new MutationObserver(cb);
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      return () => obs.disconnect();
+    },
+    () => document.documentElement.classList.contains('dark'),
+    () => false,
+  );
+}
+
 export function ThemeToggle() {
   const { settings, update } = useSettings();
-  const dark = settings.theme === 'dark' || (settings.theme === 'system' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+  const dark = useAppliedDark();
   return (
     <Button
       variant="ghost"

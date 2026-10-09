@@ -32,8 +32,11 @@ export default defineConfig(({ mode }) => {
   for (const [key, value] of Object.entries(env)) {
     if (!(key in process.env)) process.env[key] = value;
   }
+  // `--mode artifact`: versión estática de un solo archivo para publicarla como página (sin API local).
+  const artifact = mode === 'artifact';
   return {
     plugins: [react(), tailwindcss(), apiPlugin()],
+    define: artifact ? { 'import.meta.env.VITE_STATIC': JSON.stringify('true') } : undefined,
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -41,6 +44,15 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: { port: 5173, host: 'localhost' },
-    build: { sourcemap: true, chunkSizeWarningLimit: 1200 },
+    build: artifact
+      ? {
+          outDir: 'dist-artifact',
+          sourcemap: false,
+          cssCodeSplit: false,
+          assetsInlineLimit: 100_000_000,
+          chunkSizeWarningLimit: 4000,
+          rollupOptions: { output: { inlineDynamicImports: true } },
+        }
+      : { sourcemap: true, chunkSizeWarningLimit: 1200 },
   };
 });

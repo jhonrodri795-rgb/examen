@@ -5,6 +5,7 @@
 import type {
   ApiError, PronunciationAssessment, ServerCapabilities, SpeakingEvaluation, Transcript, WritingEvaluation,
 } from '@shared/speaking-types';
+import { STATIC_BUILD, hostCapability } from './runtime';
 
 export class ApiRequestError extends Error {
   constructor(
@@ -44,6 +45,8 @@ async function request<T>(path: string, init: RequestInit, timeoutMs = 90_000): 
 }
 
 export async function getCapabilities(): Promise<ServerCapabilities | null> {
+  // La versión estática no tiene servidor: funciona solo con análisis local.
+  if (STATIC_BUILD) return null;
   try {
     return await request<ServerCapabilities>('/api/capabilities', { method: 'GET' }, 5000);
   } catch {
@@ -97,7 +100,26 @@ export function evaluateWriting(body: WritingEvalRequest): Promise<WritingEvalua
   }, 180_000);
 }
 
+interface DownloadsCapability {
+  save(req: { filename: string; data: Blob }): Promise<{ status: string }>;
+}
+
+/** Ofrece un archivo al usuario. Dentro del visor de claude.ai usa su capacidad de descargas. */
 export function downloadBlob(blob: Blob, filename: string): void {
+  if (STATIC_BUILD) {
+    void hostCapability<DownloadsCapability>('downloads').then((d) => {
+      if (d) {
+        d.save({ filename, data: blob }).catch(() => undefined);
+        return;
+      }
+      anchorDownload(blob, filename);
+    });
+    return;
+  }
+  anchorDownload(blob, filename);
+}
+
+function anchorDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

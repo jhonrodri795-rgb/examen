@@ -55,8 +55,16 @@ export async function persistSettings(s: Settings): Promise<void> {
   }
 }
 
+/** ¿El entorno pide modo oscuro? Respeta el tema del visor (data-theme) y, si no, el del sistema. */
+export function systemPrefersDark(): boolean {
+  const host = document.documentElement.getAttribute('data-theme');
+  if (host === 'dark' || host === 'light') return host === 'dark';
+  return !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+}
+
 export function applyTheme(theme: Theme, largeText = false): void {
-  const dark = theme === 'dark' || (theme === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
-  document.documentElement.classList.toggle('dark', !!dark);
+  const dark = theme === 'dark' || (theme === 'system' && systemPrefersDark());
+  document.documentElement.classList.toggle('dark', dark);
+  document.documentElement.classList.toggle('light', !dark);
   document.documentElement.classList.toggle('text-lg-mode', largeText);
 }

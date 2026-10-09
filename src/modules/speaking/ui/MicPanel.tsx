@@ -5,6 +5,17 @@ import { useMic, useSettings } from '@/app/context';
 import { cn, formatClock } from '@/lib/format';
 import { LevelMeter, type MicState, type MicStatus } from '../microphone';
 import { Recorder, type RecordingResult } from '../recorder';
+import { STATIC_BUILD } from '@/lib/runtime';
+
+/** Aviso para la versión publicada en claude.ai, donde el visor no concede el micrófono. */
+export function StaticMicNotice() {
+  if (!STATIC_BUILD) return null;
+  return (
+    <Alert tone="warn" title="Micrófono no disponible en esta versión publicada">
+      El visor de páginas publicadas no permite usar el micrófono, así que no se puede grabar aquí. El resto de la plataforma funciona con normalidad. Para practicar Speaking con grabación, ejecuta la aplicación en tu ordenador (<code>npm install</code> y <code>npm run dev</code>, ver README).
+    </Alert>
+  );
+}
 
 const STATUS: Record<MicStatus, { label: string; tone: 'ok' | 'warn' | 'bad' | 'neutral' | 'accent' }> = {
   idle: { label: 'Disponible', tone: 'neutral' },
@@ -110,6 +121,8 @@ export function MicSetupPanel({ compact }: { compact?: boolean }) {
       setTesting('idle');
     }
   };
+
+  if (STATIC_BUILD) return <StaticMicNotice />;
 
   return (
     <div className="space-y-4">
