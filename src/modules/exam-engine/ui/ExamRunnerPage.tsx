@@ -6,7 +6,9 @@ import {
 import { useBank, useMic, useToast } from '@/app/context';
 import { Alert, Badge, Button, ConfirmDialog, Dialog, EmptyState, ProgressBar, Spinner } from '@/components/ui';
 import { cn, formatClock, formatDuration } from '@/lib/format';
-import { MicSetupPanel } from '@/modules/speaking/ui/MicPanel';
+import { MicSetupPanel, StaticMicNotice } from '@/modules/speaking/ui/MicPanel';
+import { DictationHelp } from '@/modules/speaking/ui/StaticSpeakingResponse';
+import { STATIC_BUILD } from '@/lib/runtime';
 import { sectionName } from '@/modules/scoring/results';
 import type { SectionId } from '@/modules/question-bank/types';
 import {
@@ -319,7 +321,8 @@ function SectionIntro({ attempt, apply }: { attempt: Attempt; apply: ReturnType<
   const Icon = SECTION_ICON[section.id];
   const totalItems = section.modules.reduce((s, m) => s + m.itemIds.length, 0);
   const minutes = section.modules.reduce((s, m) => s + (m.timer.limitMs ?? 0), 0) / 60_000;
-  const needsMic = section.id === 'speaking';
+  // En la versión publicada no hay micrófono: se responde dictando o escribiendo.
+  const needsMic = section.id === 'speaking' && !STATIC_BUILD;
   const micOk = state.status === 'active';
   const warnings = section.modules.flatMap((m) => m.warnings);
   return (
@@ -338,7 +341,7 @@ function SectionIntro({ attempt, apply }: { attempt: Attempt; apply: ReturnType<
       <div className="rounded-xl border border-line bg-surface p-5">
         <h2 className="mb-2 text-sm font-semibold text-ink">Instrucciones</h2>
         <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-2">
-          {(spec?.instructions ?? ['Responde a las preguntas seleccionadas. Puedes navegar libremente.']).map((i) => (
+          {(spec?.instructions ?? ['Responde a las preguntas seleccionadas. Puedes navegar libremente.']).filter((i) => !(STATIC_BUILD && /micrófono|grabaci/i.test(i))).map((i) => (
             <li key={i}>{i}</li>
           ))}
           {attempt.config.mode === 'practice' && <li>Modo práctica: {attempt.config.instantFeedback ? 'puedes comprobar cada respuesta y ver la explicación.' : 'las soluciones se muestran al final.'}</li>}
@@ -355,6 +358,13 @@ function SectionIntro({ attempt, apply }: { attempt: Attempt; apply: ReturnType<
         <div className="rounded-xl border border-line bg-surface p-5">
           <h2 className="mb-3 text-sm font-semibold text-ink">Comprobación del micrófono</h2>
           <MicSetupPanel compact />
+        </div>
+      )}
+      {section.id === 'speaking' && STATIC_BUILD && (
+        <div className="space-y-3 rounded-xl border border-line bg-surface p-5">
+          <h2 className="text-sm font-semibold text-ink">Cómo responder en esta versión</h2>
+          <StaticMicNotice />
+          <DictationHelp />
         </div>
       )}
       <div className="flex flex-wrap gap-3">

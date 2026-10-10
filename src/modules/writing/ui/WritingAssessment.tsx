@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Bot, Calculator, CheckCircle2, Download, FileText, Sparkles, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Bot, Calculator, CheckCircle2, Download, FileText, Loader2, Sparkles, Square, XCircle } from 'lucide-react';
 import type { WritingEvaluation } from '@shared/speaking-types';
 import { useCapabilities, useConsent, useToast } from '@/app/context';
 import { Alert, Badge, Button, Card, CardHeader } from '@/components/ui';
@@ -11,6 +11,7 @@ import { listWritingReports, saveWritingReport } from '@/modules/storage/reposit
 import type { WritingReportRecord } from '@/modules/storage/db';
 import { analyzeWriting, type WritingAnalysis } from '../analysis';
 import { cn } from '@/lib/format';
+import { STATIC_BUILD } from '@/lib/runtime';
 
 const SELF_CRITERIA = [
   { key: 'development', label: 'Desarrollo de ideas', hint: 'Razones y ejemplos relevantes y bien explicados.' },
@@ -82,13 +83,16 @@ export function WritingAssessment({
   currentRating?: RubricRating;
   onRated?: (r: RubricRating) => void;
 }) {
-  const { caps } = useCapabilities();
+  const { caps, refresh } = useCapabilities();
   const consent = useConsent();
   const toast = useToast();
   const analysis = useMemo(() => analyzeWriting(text, analysisContext(set)), [text, set]);
   const [evaluation, setEvaluation] = useState<WritingEvaluation | null>(null);
   const [evalError, setEvalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<'thinking' | 'writing' | null>(null);
+  const abort = useRef<AbortController | null>(null);
+  useEffect(() => () => abort.current?.abort(), []);
   const [self, setSelf] = useState<Record<string, number>>(() => Object.fromEntries(SELF_CRITERIA.map((c) => [c.key, Number(currentRating?.criteria?.[c.key] ?? 3)])));
   const [note, setNote] = useState('');
 
@@ -108,6 +112,9 @@ export function WritingAssessment({
       return;
     }
     setLoading(true);
+    setProgress('thinking');
+    const ctl = new AbortController();
+    abort.current = ctl;
     try {
       const ev = await evaluateWriting({
         task: {
@@ -117,14 +124,18 @@ export function WritingAssessment({
           recommendedWords: set.recommendedWords,
         },
         text,
-      });
+      }, { signal: ctl.signal, onWriting: () => setProgress('writing') });
       setEvaluation(ev);
       const rec: WritingReportRecord = { id: newId('wrep'), draftId, setId: set.id, attemptId, itemId, text, createdAt: Date.now(), analysis, evaluation: ev, selfAssessment: null };
       await saveWritingReport(rec).catch(() => undefined);
     } catch (e) {
-      setEvalError(e instanceof ApiRequestError ? e.message : (e as Error).message);
+      if (!ctl.signal.aborted) setEvalError(e instanceof ApiRequestError ? e.message : (e as Error).message);
+      // Rechazos definitivos del visor (permiso denegado, etc.): ocultar la función.
+      if ((e as { permanent?: boolean }).permanent) void refresh();
     } finally {
+      if (abort.current === ctl) abort.current = null;
       setLoading(false);
+      setProgress(null);
     }
   };
 
@@ -214,16 +225,35 @@ export function WritingAssessment({
         <CardHeader
           icon={<Bot className="h-5 w-5" />}
           title="Evaluación con IA"
-          description={caps?.evaluator.configured ? `Proveedor: ${caps.evaluator.provider} · ${caps.evaluator.model}. Se envía solo el texto y el enunciado.` : 'No hay un evaluador de IA configurado en el servidor (ver README → variables de entorno).'}
+          description={
+            caps?.evaluator.configured
+              ? `Proveedor: ${caps.evaluator.provider} · ${caps.evaluator.model}. Se envía solo el texto y el enunciado.`
+              : STATIC_BUILD
+                ? caps?.evaluator.dataPolicy ?? 'Comprobando si Claude está disponible…'
+                : 'No hay un evaluador de IA configurado en el servidor (ver README → variables de entorno).'
+          }
           actions={
             caps?.evaluator.configured && (
-              <Button onClick={runAi} loading={loading} disabled={analysis.wordCount < 20} icon={<Sparkles className="h-4 w-4" />}>
-                {evaluation ? 'Reevaluar' : 'Evaluar con IA'}
-              </Button>
+              <>
+                {loading && (
+                  <Button variant="ghost" size="sm" onClick={() => abort.current?.abort()} icon={<Square className="h-4 w-4" />}>
+                    Cancelar
+                  </Button>
+                )}
+                <Button onClick={runAi} loading={loading} disabled={analysis.wordCount < 20} icon={<Sparkles className="h-4 w-4" />}>
+                  {evaluation ? 'Reevaluar' : STATIC_BUILD ? 'Evaluar con Claude' : 'Evaluar con IA'}
+                </Button>
+              </>
             )
           }
         />
         <div className="space-y-4 p-5 text-sm">
+          {progress && (
+            <p className="flex items-center gap-2 text-accent" aria-live="polite">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              {progress === 'thinking' ? 'Claude está analizando tu texto (puede tardar hasta 1–2 minutos)…' : 'Redactando la evaluación…'}
+            </p>
+          )}
           {analysis.wordCount < 20 && caps?.evaluator.configured && <p className="text-muted">Escribe al menos 20 palabras para solicitar la evaluación.</p>}
           {evalError && <Alert tone="bad">{evalError}</Alert>}
           {!evaluation && !evalError && <p className="text-muted">{caps?.evaluator.configured ? 'Aún no se ha evaluado este texto.' : 'Puedes usar el análisis local y la autoevaluación.'}</p>}

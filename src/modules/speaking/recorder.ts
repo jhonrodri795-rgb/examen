@@ -27,6 +27,8 @@ export function extensionFor(mime: string): string {
   if (mime.includes('ogg')) return 'ogg';
   if (mime.includes('mp4') || mime.includes('aac')) return 'm4a';
   if (mime.includes('wav')) return 'wav';
+  if (mime.includes('mpeg') || mime.includes('mp3')) return 'mp3';
+  if (mime.includes('flac')) return 'flac';
   return 'audio';
 }
 

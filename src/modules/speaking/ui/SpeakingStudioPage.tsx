@@ -11,6 +11,8 @@ import type { RecordingMeta, SpeakingReportRecord } from '@/modules/storage/db';
 import { clearSpeakingHistory, listRecordingMeta, listSpeakingReports } from '@/modules/storage/repositories';
 import { MicSetupPanel } from './MicPanel';
 import { SpeakingRecorder } from './SpeakingRecorder';
+import { DictationHelp } from './StaticSpeakingResponse';
+import { STATIC_BUILD } from '@/lib/runtime';
 import { CRITERION_LABEL, SpeakingReportView, type SpeakingTaskInfo } from './SpeakingReportView';
 
 type StudioSet = ListenRepeatSet | InterviewSet | IndependentSpeakingSet;
@@ -122,7 +124,7 @@ function PracticeTab({ initialItem }: { initialItem?: string | null }) {
             {recordingId ? (
               <SpeakingReportView key={recordingId} recordingId={recordingId} task={item.task} autoAnalyze onPracticeAgain={reset} onDeleted={reset} />
             ) : (
-              <EmptyState icon={<Mic className="h-8 w-8" />} title="Graba tu respuesta" description="Cuando termines, verás aquí el análisis: métricas de la señal, transcripción (si está configurada) y evaluación por criterios." />
+              <EmptyState icon={<Mic className="h-8 w-8" />} title={STATIC_BUILD ? 'Responde a la pregunta' : 'Graba tu respuesta'} description={STATIC_BUILD ? 'Cuando guardes tu respuesta verás aquí la evaluación por criterios con Claude y, si subes audio, las métricas de pausas y ritmo.' : 'Cuando termines, verás aquí el análisis: métricas de la señal, transcripción (si está configurada) y evaluación por criterios.'} />
             )}
             {recordingId && itemIdx < items.length - 1 && (
               <Button className="mt-4" variant="secondary" onClick={() => { setItemIdx((i) => i + 1); reset(); }}>
@@ -294,7 +296,7 @@ function PrivacyTab() {
             ))
           )}
           {caps && <li className="rounded-lg bg-surface-3 p-3 text-ink-2">{caps.storage}</li>}
-          <li className="text-xs text-muted">Las claves de los proveedores solo existen en el servidor (variables de entorno); el navegador nunca las recibe.</li>
+          <li className="text-xs text-muted">{STATIC_BUILD ? 'Esta página no contiene claves de ningún proveedor: Claude se usa a través de tu sesión de claude.ai, que pide tu permiso.' : 'Las claves de los proveedores solo existen en el servidor (variables de entorno); el navegador nunca las recibe.'}</li>
         </ul>
       </Card>
     </div>
@@ -338,7 +340,7 @@ function DemoTab() {
 
 export function SpeakingStudioPage() {
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') ?? 'mic';
+  const tab = params.get('tab') ?? (STATIC_BUILD ? 'practice' : 'mic');
   const { mic } = useMic();
   // Liberar el micrófono al salir del módulo.
   useEffect(() => () => mic.release(), [mic]);
@@ -349,7 +351,7 @@ export function SpeakingStudioPage() {
         value={tab}
         onValueChange={(v) => setParams({ tab: v }, { replace: true })}
         tabs={[
-          { value: 'mic', label: 'Micrófono', content: <Card className="max-w-2xl p-5"><MicSetupPanel /></Card> },
+          { value: 'mic', label: STATIC_BUILD ? 'Cómo responder' : 'Micrófono', content: <Card className="max-w-2xl space-y-4 p-5"><MicSetupPanel />{STATIC_BUILD && <DictationHelp open />}</Card> },
           { value: 'practice', label: 'Practicar', content: <PracticeTab initialItem={params.get('item')} /> },
           { value: 'history', label: 'Historial', content: <HistoryTab /> },
           { value: 'privacy', label: 'Privacidad', content: <PrivacyTab /> },

@@ -41,7 +41,12 @@ npm run dev          # abre http://localhost:5173  (frontend + API en un solo pr
 
 ### Opción B — versión publicada (sin instalar nada)
 
-`npm run build:artifact` genera `dist-artifact/toefl-prep-studio.html`, un único archivo con toda la aplicación que puede publicarse como página. En esa versión no hay servidor (sin transcripción ni IA) y el visor no permite el micrófono, así que Speaking no puede grabar; todo lo demás funciona y el progreso se guarda en el navegador.
+`npm run build:artifact` genera `dist-artifact/toefl-prep-studio.html`, un único archivo con toda la aplicación que puede publicarse como página (artefacto de claude.ai, publicado con la capacidad `sample`). En esa versión no hay servidor y el visor no permite el micrófono:
+
+- **Evaluación con Claude (Writing y Speaking):** la página pide la evaluación a Claude a través de la cuenta de claude.ai de quien la abre (consume su uso; claude.ai pide permiso la primera vez). No hay claves en la página. Se usan la misma rúbrica, el mismo esquema de salida y las mismas comprobaciones de citas literales que en el servidor (`shared/evaluation.ts`). Fuera de claude.ai, o si se deniega el permiso, se usa el análisis local.
+- **Speaking sin micrófono:** con cronómetro, el estudiante responde en voz alta y **dicta** la respuesta con el dictado del sistema (Win + H, doble Fn en macOS, micrófono del teclado en el móvil) o la escribe. Opcionalmente **sube un audio** grabado con otra app: se analiza en el navegador (pausas, tiempo de habla, ritmo) y nunca se envía. Sin audio, la fluidez se marca «No evaluable».
+- No hay transcripción automática ni evaluación de pronunciación; la evaluación indica que la transcripción es propia.
+- El progreso se guarda en el navegador.
 
 Producción local:
 
@@ -140,6 +145,7 @@ Se calcula en el navegador sobre la señal decodificada: detección de voz por e
 
 ### Evaluación
 - **Con IA** (`EVALUATOR_PROVIDER=anthropic`, modelo por defecto `claude-opus-5-5`, SDK oficial con salida estructurada validada con Zod y *fallback* del servidor de Anthropic activado): rúbrica Delivery / Language use / Topic development / Task fulfillment (0–4), aspectos positivos, errores con cita, fragmentos a revisar, versión mejorada, ejercicios y consejos. El servidor **verifica que cada cita aparece literalmente en la transcripción** y descarta las que no; un criterio sin evidencia verificable queda como «No evaluable»; Delivery no se puntúa sin métricas de audio. El audio no se envía al evaluador, solo la transcripción y las métricas.
+- **Con Claude en la versión publicada** (capacidad `sample` del visor de claude.ai): mismo prompt, esquema JSON (generado desde Zod) y post-procesado que el servidor; la respuesta se valida con Zod en el navegador. Solo se envía texto (transcripción propia, enunciado y métricas). Errores del visor (`not_granted`, `rate_limited`, etc.) se traducen a mensajes claros; un permiso denegado oculta la función.
 - **Sin IA**: evaluación heurística con reglas explícitas (pausas, ritmo, muletillas, conectores, extensión, coincidencia de palabras clave, precisión de repetición), siempre marcada como tal.
 - **Autoevaluación** con rúbrica en todos los casos.
 - Informes exportables (.md/.json), historial, gráfico de evolución por criterio, comparación de dos respuestas y botón «Practicar de nuevo».
@@ -259,7 +265,7 @@ src/
     results/ history/     Resultados, revisión, historial, notas
     settings/ storage/    Ajustes; IndexedDB, repositorios, exportación/importación
     tips/                 Formato y estrategias
-shared/                   Contrato de tipos cliente ↔ servidor
+shared/                   Contrato de tipos cliente ↔ servidor; rúbricas, esquemas y comprobaciones del evaluador (evaluation.ts)
 server/                   API Hono: validación, límites, proveedores STT/pronunciación/IA (solo en servidor)
 e2e/                      Pruebas Playwright
 ```
@@ -284,7 +290,7 @@ El motor del examen (`exam-engine/engine.ts`) es un conjunto de funciones puras 
 ## Pruebas
 
 ```bash
-npm test             # 100 pruebas (Vitest)
+npm test             # 114 pruebas (Vitest)
 npm run test:e2e     # 11 pruebas (Playwright, Chromium con dispositivo de audio simulado)
 ```
 
@@ -295,6 +301,7 @@ Cubren, entre otros:
 - **Almacenamiento:** guardado/recuperación, rechazo de revisiones antiguas, autoguardado de borradores, grabaciones, borrado de datos, exportación/importación con audio.
 - **Speaking:** permiso concedido/denegado, sin micrófono, micrófono ocupado, contexto inseguro, cambio y desconexión de dispositivo, pista finalizada, liberación de pistas, selección de formato, grabación manual, **fin automático por límite de tiempo**, error de grabación, interrupción, grabación vacía/corta/larga, VAD (pausas, silencio, zumbido estacionario, saturación, volumen bajo), métricas de transcripción, alineación, evaluación heurística.
 - **Servidor:** configuración, validación de audio (vacío, corto, largo, grande, firma falsa, tipo no admitido), API no configurada (503), consentimiento obligatorio (428), transcripción correcta/fallida/tiempo agotado/sin voz, duración real excesiva, límite de uso (429), tamaño de cuerpo (413), validación de cuerpos, mapeo de respuestas de OpenAI, Deepgram y Azure, verificación de evidencias del evaluador.
+- **Versión publicada:** evaluador con Claude simulado (prompt con rúbrica y esquema, validación, citas inventadas descartadas, respuestas truncadas o mal formadas, permiso denegado, límite de uso, sin visor), respuesta de Speaking solo con texto, Delivery no evaluable sin audio, Listen and Repeat con texto dictado, recurso a la heurística si Claude deja de estar disponible.
 - **E2E:** todas las páginas sin errores; Reading completo en modo examen (navegación, marcado, módulo adaptativo, resultados, revisión); recarga con recuperación; Listening sin retroceso; autoguardado de Writing; micrófono simulado con prueba, grabación y análisis; Speaking en modo examen con fin por tiempo y avance automático; permiso denegado y omisión de la sección; consentimiento, transcripción y evaluación con IA (red interceptada en la prueba), rechazo del consentimiento sin llamadas externas, transcripción fallida y evaluación incompleta con informe parcial.
 
 ---
@@ -308,3 +315,4 @@ Cubren, entre otros:
 - La calidad del Listening con síntesis de voz depende de las voces instaladas en el navegador/sistema; para una práctica realista conviene añadir grabaciones.
 - Al recargar durante un examen, el temporizador se pausa en el último guardado (en el examen oficial no existe pausa).
 - Los datos viven en un único navegador; para usarlos en otro dispositivo, exporta e importa.
+- Versión publicada: sin micrófono ni reconocimiento de voz propio. El dictado del sistema puede corregir titubeos y errores, por lo que la evaluación de lengua puede ser más favorable que con una transcripción automática del audio; la pronunciación no se evalúa.

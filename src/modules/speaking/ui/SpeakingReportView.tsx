@@ -9,7 +9,8 @@ import type { RubricRating } from '@/modules/exam-engine/types';
 import type { RecordingRecord, SpeakingReportRecord } from '@/modules/storage/db';
 import { deleteRecording, getSpeakingReportByRecording, saveSpeakingReport } from '@/modules/storage/repositories';
 import { runPipeline, type PipelineStep } from '../pipeline';
-import { isMemoryOnly, loadRecording, recordingBlob } from '../recordings';
+import { hasAudio, isMemoryOnly, loadRecording, recordingBlob } from '../recordings';
+import { STATIC_BUILD } from '@/lib/runtime';
 import { extensionFor } from '../recorder';
 
 export const CRITERION_LABEL: Record<Criterion, string> = {
@@ -23,7 +24,7 @@ const STEP_LABEL: Record<PipelineStep, string> = {
   acoustic: 'Analizando la señal de audio…',
   transcribe: 'Transcribiendo…',
   pronunciation: 'Evaluando la pronunciación…',
-  evaluate: 'Generando la evaluación…',
+  evaluate: STATIC_BUILD ? 'Claude está evaluando tu respuesta (puede tardar hasta 1–2 minutos)…' : 'Generando la evaluación…',
   done: 'Listo',
 };
 
@@ -84,8 +85,8 @@ function reportToMarkdown(task: SpeakingTaskInfo, r: SpeakingReportRecord): stri
     `## Consigna`,
     task.prompt,
     '',
-    '## Transcripción original',
-    r.transcript ? `${r.transcript.text}\n\n(Proveedor: ${r.transcript.provider} · ${r.transcript.model})` : `No disponible: ${r.transcriptError ?? '—'}`,
+    r.transcript?.provider === 'self' ? '## Respuesta dictada o escrita por el estudiante' : '## Transcripción original',
+    r.transcript ? (r.transcript.provider === 'self' ? r.transcript.text : `${r.transcript.text}\n\n(Proveedor: ${r.transcript.provider} · ${r.transcript.model})`) : `No disponible: ${r.transcriptError ?? '—'}`,
   ];
   if (r.editedTranscript) lines.push('', '## Transcripción corregida por el estudiante', r.editedTranscript);
   if (a) lines.push('', '## Métricas acústicas (análisis local)', `- Duración: ${a.totalDurationSec} s · Habla: ${a.speechDurationSec} s · Proporción de habla: ${Math.round(a.phonationRatio * 100)} %`, `- Pausas: ${a.pauseCount} (largas: ${a.longPauseCount}) · Pausa media: ${a.meanPauseSec} s · Más larga: ${a.longestPauseSec} s`, `- Segmento medio de habla: ${a.meanRunSec} s`);
@@ -122,7 +123,7 @@ export function SpeakingReportView({
   onDeleted?: () => void;
   autoAnalyze?: boolean;
 }) {
-  const { caps } = useCapabilities();
+  const { caps, refresh } = useCapabilities();
   const consent = useConsent();
   const { settings } = useSettings();
   const toast = useToast();
@@ -144,8 +145,10 @@ export function SpeakingReportView({
     void loadRecording(recordingId).then(async (r) => {
       if (!r) return setMissing(true);
       setRec(r);
-      u = URL.createObjectURL(recordingBlob(r));
-      setUrl(u);
+      if (hasAudio(r)) {
+        u = URL.createObjectURL(recordingBlob(r));
+        setUrl(u);
+      }
       const existing = await getSpeakingReportByRecording(recordingId).catch(() => undefined);
       if (existing) {
         setReport(existing);
@@ -162,7 +165,7 @@ export function SpeakingReportView({
       if (!rec) return;
       setStep('acoustic');
       try {
-        const r = await runPipeline(rec, { caps, consent, task, persist: settings.saveRecordings, onStep: setStep, existing: fresh ? undefined : report ?? undefined });
+        const r = await runPipeline(rec, { caps, consent, task, persist: settings.saveRecordings, onStep: setStep, existing: fresh ? undefined : report ?? undefined, onPermanentFailure: () => void refresh() });
         setReport(r);
         setEdited(r.editedTranscript ?? r.transcript?.text ?? '');
       } catch (e) {
@@ -171,7 +174,7 @@ export function SpeakingReportView({
         setStep(null);
       }
     },
-    [rec, caps, consent, task, settings.saveRecordings, report, toast],
+    [rec, caps, consent, task, settings.saveRecordings, report, toast, refresh],
   );
 
   useEffect(() => {
@@ -207,7 +210,7 @@ export function SpeakingReportView({
       <Card>
         <CardHeader
           title="Tu respuesta"
-          description={`${formatDate(rec.createdAt)} · ${formatClock(rec.durationMs)} · ${rec.mimeType.split(';')[0]}${isMemoryOnly(rec.id) ? ' · solo en memoria' : ''}`}
+          description={`${formatDate(rec.createdAt)} · ${hasAudio(rec) ? `${formatClock(rec.durationMs)} · ${rec.mimeType.split(';')[0]}${rec.source === 'upload' ? ' (subido)' : ''}` : 'respuesta dictada o escrita, sin audio'}${isMemoryOnly(rec.id) ? ' · solo en memoria' : ''}`}
           actions={
             <>
               {!report && (
@@ -271,8 +274,10 @@ export function SpeakingReportView({
                       Estas métricas describen pausas y continuidad; no miden pronunciación ni inteligibilidad. {m ? '' : 'Sin transcripción no se calculan palabras por minuto ni muletillas.'}
                     </p>
                   </>
-                ) : (
+                ) : hasAudio(rec) ? (
                   <p className="text-muted">No se pudo analizar el audio en este navegador.</p>
+                ) : (
+                  <p className="text-muted">No hay audio de esta respuesta, así que no se miden pausas, tiempo de habla ni ritmo. Para obtenerlos, grábate con otra app (p. ej. la grabadora del móvil) y sube el audio al responder.</p>
                 )}
               </div>
             </Card>
@@ -280,7 +285,7 @@ export function SpeakingReportView({
             <Card>
               <CardHeader
                 title="Transcripción"
-                description={report.transcript ? `${report.transcript.provider} · ${report.transcript.model}${report.transcript.capabilities.wordConfidence ? ' · con confianza por palabra' : report.transcript.capabilities.segmentConfidence ? ' · confianza por segmento' : ''}` : 'No disponible'}
+                description={report.transcript?.provider === 'self' ? 'Escrita o dictada por ti (no es reconocimiento automático del audio)' : report.transcript ? `${report.transcript.provider} · ${report.transcript.model}${report.transcript.capabilities.wordConfidence ? ' · con confianza por palabra' : report.transcript.capabilities.segmentConfidence ? ' · confianza por segmento' : ''}` : 'No disponible'}
                 actions={
                   report.transcript && (
                     <Button variant="ghost" size="sm" onClick={() => setEditing((v) => !v)} icon={<Pencil className="h-4 w-4" />}>
@@ -354,7 +359,7 @@ export function SpeakingReportView({
                         </span>
                       ))}
                     </p>
-                    <p className="mt-1 text-xs text-muted">Tachado = omitida · ámbar = sustituida · +azul = añadida. Algunas diferencias pueden deberse al reconocimiento automático.</p>
+                    <p className="mt-1 text-xs text-muted">Tachado = omitida · ámbar = sustituida · +azul = añadida. Algunas diferencias pueden deberse {report.transcript?.provider === 'self' ? 'al dictado o a la escritura.' : 'al reconocimiento automático.'}</p>
                   </div>
                 )}
                 {report.pronunciation && (
@@ -391,7 +396,9 @@ export function SpeakingReportView({
               {report.evaluationError && <Alert tone="warn">{report.evaluationError}</Alert>}
               {!caps?.evaluator.configured && (
                 <Alert tone="info" title="Modo sin IA">
-                  No hay evaluador de IA configurado. Se muestra una evaluación heurística; no se inventan puntuaciones de pronunciación. Configura el servidor (README) para activar la evaluación avanzada.
+                  {STATIC_BUILD
+                    ? `${caps?.evaluator.dataPolicy ?? 'La evaluación con Claude no está disponible.'} Se muestra una evaluación heurística; no se inventan puntuaciones de pronunciación.`
+                    : 'No hay evaluador de IA configurado. Se muestra una evaluación heurística; no se inventan puntuaciones de pronunciación. Configura el servidor (README) para activar la evaluación avanzada.'}
                 </Alert>
               )}
               {ev && (
@@ -485,9 +492,11 @@ export function SpeakingReportView({
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" icon={<Download className="h-4 w-4" />} onClick={() => downloadBlob(recordingBlob(rec), `respuesta-${rec.itemId}.${extensionFor(rec.mimeType)}`)}>
-          Descargar audio
-        </Button>
+        {hasAudio(rec) && (
+          <Button variant="outline" size="sm" icon={<Download className="h-4 w-4" />} onClick={() => downloadBlob(recordingBlob(rec), `respuesta-${rec.itemId}.${extensionFor(rec.mimeType)}`)}>
+            Descargar audio
+          </Button>
+        )}
         {report && (
           <>
             <Button variant="outline" size="sm" icon={<Download className="h-4 w-4" />} onClick={() => downloadText(reportToMarkdown(task, report), `informe-speaking-${rec.itemId}.md`, 'text/markdown')}>
@@ -504,7 +513,7 @@ export function SpeakingReportView({
           </Button>
         )}
         <Button variant="ghost" size="sm" className="text-bad" icon={<Trash2 className="h-4 w-4" />} onClick={() => setConfirmDelete(true)}>
-          Eliminar grabación e informe
+          {hasAudio(rec) ? 'Eliminar grabación e informe' : 'Eliminar respuesta e informe'}
         </Button>
       </div>
       <ConfirmDialog

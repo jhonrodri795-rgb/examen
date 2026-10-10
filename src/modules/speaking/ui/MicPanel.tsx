@@ -11,8 +11,14 @@ import { STATIC_BUILD } from '@/lib/runtime';
 export function StaticMicNotice() {
   if (!STATIC_BUILD) return null;
   return (
-    <Alert tone="warn" title="Micrófono no disponible en esta versión publicada">
-      El visor de páginas publicadas no permite usar el micrófono, así que no se puede grabar aquí. El resto de la plataforma funciona con normalidad. Para practicar Speaking con grabación, ejecuta la aplicación en tu ordenador (<code>npm install</code> y <code>npm run dev</code>, ver README).
+    <Alert tone="info" title="Speaking sin micrófono en la versión publicada">
+      <p>El visor de claude.ai no permite que una página publicada use el micrófono. Aquí puedes practicar igualmente:</p>
+      <ul className="mt-1 list-disc pl-5">
+        <li>Responde en voz alta con el cronómetro y <strong>dicta</strong> tu respuesta con el dictado de tu teclado o sistema (o escríbela).</li>
+        <li>Opcional: grábate con otra app y <strong>sube el audio</strong> para medir pausas, tiempo de habla y ritmo en tu navegador.</li>
+        <li>Claude evalúa el contenido (lengua, desarrollo y cumplimiento de la tarea) con tu cuenta de claude.ai. La pronunciación no se puntúa.</li>
+      </ul>
+      <p className="mt-1">Para grabar directamente con transcripción automática, ejecuta la aplicación en tu ordenador (<code>npm install</code> y <code>npm run dev</code>, ver README).</p>
     </Alert>
   );
 }

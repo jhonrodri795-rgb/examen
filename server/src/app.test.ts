@@ -251,7 +251,7 @@ describe('verificación de evidencias del evaluador', () => {
       strengths: ['x'],
       issues: [{ quote: 'invented phrase', problem: 'p', suggestion: 's', kind: 'grammar' }, { quote: 'because it is quiet', problem: 'p', suggestion: 's', kind: 'coherence' }],
       improvedResponse: 'Better.', exercises: [], pronunciationAdvice: [], limitations: [],
-    }, input, 'm');
+    }, input, { provider: 'anthropic', model: 'm' });
     const by = Object.fromEntries(ev.criteria.map((c) => [c.criterion, c]));
     expect(by.delivery!.evaluable).toBe(false);
     expect(by.languageUse!.score).toBe(3);
@@ -268,7 +268,7 @@ describe('verificación de evidencias del evaluador', () => {
     const ev = postProcessWriting({
       criteria: [{ name: 'grammar', score: 7, rationale: 'r', evidence: ['dear sir', 'not in text'] }],
       issues: [], strengths: [], improvedVersion: 'v', limitations: [],
-    }, { task: { type: 'email', prompt: 'p', details: [], recommendedWords: [80, 120] }, text: 'Dear Sir, hello.' }, 'm');
+    }, { task: { type: 'email', prompt: 'p', details: [], recommendedWords: [80, 120] }, text: 'Dear Sir, hello.' }, { provider: 'anthropic', model: 'm' });
     expect(ev.criteria[0]!.score).toBe(5);
     expect(ev.criteria[0]!.evidence).toEqual(['dear sir']);
     expect(ev.droppedEvidence).toBe(1);

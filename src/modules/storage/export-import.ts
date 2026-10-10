@@ -43,7 +43,8 @@ export function base64ToBuffer(b64: string): ArrayBuffer {
 export async function exportAll(options: { includeAudio: boolean }): Promise<ExportFile> {
   const db = await getDb();
   const recordings = (await db.getAll('recordings')).map(({ data, ...meta }) =>
-    options.includeAudio ? { ...meta, dataBase64: bufferToBase64(data) } : meta,
+    // Las respuestas solo de texto (versión publicada) no tienen audio que omitir: se exportan siempre.
+    options.includeAudio || data.byteLength === 0 ? { ...meta, dataBase64: bufferToBase64(data) } : meta,
   );
   return {
     format: EXPORT_FORMAT,

@@ -1,4 +1,7 @@
 import type { PronunciationAssessment, SpeakingEvaluation, Transcript, WritingEvaluation } from '../../../shared/speaking-types.ts';
+import type { SpeakingEvalInput, WritingEvalInput } from '../../../shared/evaluation.ts';
+
+export type { SpeakingEvalInput, WritingEvalInput };
 
 export class ProviderError extends Error {
   constructor(
@@ -25,19 +28,6 @@ export interface PronunciationProvider {
   assess(wav: Uint8Array, referenceText: string, opts: { signal: AbortSignal }): Promise<PronunciationAssessment>;
 }
 
-export interface SpeakingEvalInput {
-  task: { type: 'listen-repeat' | 'interview' | 'independent-speaking'; prompt: string; referenceText?: string; responseSec: number };
-  transcript: { text: string; provider: string; lowConfidenceWords: string[] };
-  durationSec: number;
-  acoustic: Record<string, unknown> | null;
-  transcriptMetrics: Record<string, unknown> | null;
-  pronunciation: Record<string, unknown> | null;
-}
-
-export interface WritingEvalInput {
-  task: { type: 'email' | 'academic-discussion'; prompt: string; details: string[]; recommendedWords: [number, number] };
-  text: string;
-}
 
 export interface Evaluator {
   name: string;

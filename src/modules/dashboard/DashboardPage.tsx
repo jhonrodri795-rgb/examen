@@ -9,6 +9,7 @@ import type { Attempt } from '@/modules/exam-engine/types';
 import { listAttempts, listRecordingMeta } from '@/modules/storage/repositories';
 import { sectionName } from '@/modules/scoring/results';
 import type { SectionId } from '@/modules/question-bank/types';
+import { STATIC_BUILD } from '@/lib/runtime';
 
 export const SECTION_INFO: Record<SectionId, { icon: typeof BookOpen; color: number; blurb: string }> = {
   reading: { icon: BookOpen, color: 0, blurb: 'Complete the Words, textos cotidianos y lecturas académicas.' },
@@ -198,7 +199,7 @@ export function DashboardPage() {
           )}
         </Card>
         <Card>
-          <CardHeader title="Servicios de evaluación" description="Estado de la configuración del servidor local." actions={<Link to="/settings" className="text-sm text-accent hover:underline"><Settings className="inline h-4 w-4" /></Link>} />
+          <CardHeader title="Servicios de evaluación" description={STATIC_BUILD ? 'Versión publicada: evaluación con Claude a través de claude.ai.' : 'Estado de la configuración del servidor local.'} actions={<Link to="/settings" className="text-sm text-accent hover:underline"><Settings className="inline h-4 w-4" /></Link>} />
           <ul className="space-y-2 p-5 text-sm">
             {caps === null ? (
               <li className="text-muted">Servidor local no disponible: la app funciona sin transcripción ni IA (análisis local y rúbricas).</li>

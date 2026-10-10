@@ -30,6 +30,10 @@ export interface RecordingRecord {
   createdAt: number;
   context: 'exam' | 'studio';
   acoustic?: AcousticMetrics;
+  /** Origen: micrófono de la app, archivo subido o solo texto (versión publicada). */
+  source?: 'mic' | 'upload' | 'text';
+  /** Respuesta escrita o dictada por el estudiante (versión publicada sin micrófono). */
+  selfTranscript?: string;
 }
 
 export type RecordingMeta = Omit<RecordingRecord, 'data'>;

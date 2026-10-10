@@ -9,13 +9,14 @@
  */
 import type { ServerCapabilities } from '@shared/speaking-types';
 import { newId } from '@/lib/random';
+import { STATIC_BUILD } from '@/lib/runtime';
 import { ApiRequestError, assessPronunciation, evaluateSpeaking, transcribe } from '@/lib/api';
 import type { SpeakingReportRecord, RecordingRecord } from '../storage/db';
 import { saveSpeakingReport, updateRecordingMeta } from '../storage/repositories';
 import { analyzeSamples, decodeToMono, toWav16kMono } from './acoustic';
 import { heuristicEvaluation } from './heuristic-eval';
 import { alignWords, computeTranscriptMetrics } from './transcript-analysis';
-import { isMemoryOnly } from './recordings';
+import { hasAudio, isMemoryOnly, selfTranscriptOf } from './recordings';
 
 export type PipelineStep = 'acoustic' | 'transcribe' | 'pronunciation' | 'evaluate' | 'done';
 
@@ -27,6 +28,8 @@ export interface PipelineContext {
   persist: boolean;
   /** Reutilizar un informe existente (p. ej. reevaluar tras editar). */
   existing?: SpeakingReportRecord;
+  /** El evaluador dejó de estar disponible en esta vista (p. ej. permiso denegado). */
+  onPermanentFailure?: () => void;
 }
 
 const msg = (e: unknown) => (e instanceof ApiRequestError ? e.message : (e as Error)?.message ?? String(e));
@@ -54,9 +57,12 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
         selfAssessment: null,
       };
 
-  // 1. Acústica local
+  const audio = hasAudio(rec);
+  const selfTranscript = selfTranscriptOf(rec);
+
+  // 1. Acústica local (solo si hay audio)
   ctx.onStep?.('acoustic');
-  if (!report.acoustic) {
+  if (!report.acoustic && audio) {
     try {
       const { samples, sampleRate } = await decodeToMono(rec.data);
       report.acoustic = analyzeSamples(samples, sampleRate);
@@ -66,14 +72,19 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
     }
   }
 
-  const wantStt = !!ctx.caps?.stt.configured;
-  const wantPron = ctx.task.type === 'listen-repeat' && !!ctx.caps?.pronunciation.configured && !!ctx.task.referenceText;
+  const wantStt = !!ctx.caps?.stt.configured && audio && !selfTranscript;
+  const wantPron = audio && ctx.task.type === 'listen-repeat' && !!ctx.caps?.pronunciation.configured && !!ctx.task.referenceText;
   const wantEval = !!ctx.caps?.evaluator.configured;
   const services = [wantStt && 'stt', wantPron && 'pronunciation', wantEval && 'evaluator'].filter(Boolean) as ('stt' | 'pronunciation' | 'evaluator')[];
   const consented = services.length ? await ctx.consent(services) : false;
 
-  // 2. Transcripción
-  if (wantStt && consented && !report.transcript) {
+  // 2. Transcripción (o la respuesta escrita/dictada por el estudiante)
+  if (selfTranscript) {
+    report.transcript = selfTranscript;
+    report.transcriptError = undefined;
+  } else if (!audio) {
+    report.transcriptError = 'No hay audio ni texto de la respuesta.';
+  } else if (wantStt && consented && !report.transcript) {
     ctx.onStep?.('transcribe');
     try {
       report.transcript = await transcribe(new Blob([rec.data], { type: rec.mimeType }), rec.mimeType, rec.durationMs);
@@ -82,7 +93,9 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
       report.transcriptError = msg(e);
     }
   } else if (!wantStt) {
-    report.transcriptError = 'Transcripción no configurada en el servidor (modo sin servicios externos).';
+    report.transcriptError = STATIC_BUILD
+      ? 'Sin transcripción: en la versión publicada no hay reconocimiento de voz. Escribe o dicta tu respuesta para que se evalúe el contenido.'
+      : 'Transcripción no configurada en el servidor (modo sin servicios externos).';
   } else if (!consented) {
     report.transcriptError = 'No se envió el audio: no se otorgó el consentimiento para servicios externos.';
   }
@@ -116,10 +129,11 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
         task: ctx.task,
         transcript: {
           text: report.transcript.text,
-          provider: `${report.transcript.provider}/${report.transcript.model}`,
+          provider: selfTranscript ? 'self' : `${report.transcript.provider}/${report.transcript.model}`,
           lowConfidenceWords: report.transcriptMetrics?.lowConfidenceWords.map((w) => w.word) ?? [],
+          source: selfTranscript ? 'self' : 'asr',
         },
-        durationSec: Math.max(0.1, rec.durationMs / 1000),
+        durationSec: audio ? Math.max(0.1, rec.durationMs / 1000) : null,
         acoustic: report.acoustic ? { ...report.acoustic, runs: undefined } : null,
         transcriptMetrics: report.transcriptMetrics ? { ...report.transcriptMetrics } : null,
         pronunciation: report.pronunciation ? { ...report.pronunciation } : null,
@@ -127,6 +141,7 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
       aiDone = true;
     } catch (e) {
       report.evaluationError = `La evaluación con IA falló (${msg(e)}). Se muestra una evaluación heurística.`;
+      if ((e as { permanent?: boolean }).permanent) ctx.onPermanentFailure?.();
     }
   }
   if (!aiDone && (report.acoustic || report.transcript)) {

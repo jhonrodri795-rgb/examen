@@ -8,7 +8,8 @@ import { formatClock } from '@/lib/format';
 import { playScript, type PlaybackHandle } from '@/modules/listening/tts';
 import { ISSUE_MESSAGES, Recorder, validateRecording } from '../recorder';
 import { loadRecording, recordingBlob, storeRecording, type RecordingMetaInput } from '../recordings';
-import { LevelMeterBar, MicStatusBadge, StaticMicNotice } from './MicPanel';
+import { LevelMeterBar, MicStatusBadge } from './MicPanel';
+import { StaticSpeakingResponse } from './StaticSpeakingResponse';
 import { STATIC_BUILD } from '@/lib/runtime';
 
 type Phase = 'ready' | 'prompt' | 'prep' | 'recording' | 'saving' | 'saved' | 'error';
@@ -48,7 +49,12 @@ export interface SpeakingRecorderProps {
   allowReplayPrompt?: boolean;
 }
 
+/** Grabadora de respuestas; en la versión publicada (sin micrófono), respuesta dictada o escrita. */
 export function SpeakingRecorder(props: SpeakingRecorderProps) {
+  return STATIC_BUILD ? <StaticSpeakingResponse {...props} /> : <MicSpeakingRecorder {...props} />;
+}
+
+function MicSpeakingRecorder(props: SpeakingRecorderProps) {
   const { promptLines, promptText, showPromptText, prepSec, responseSec, minMs, meta, autoStart, allowRetry, existingRecordingId, onSaved, onSkip, allowReplayPrompt } = props;
   const { mic, state: micState } = useMic();
   const { settings } = useSettings();
@@ -184,20 +190,6 @@ export function SpeakingRecorder(props: SpeakingRecorderProps) {
   };
 
   const micBlocked = ['blocked', 'unavailable', 'unsupported'].includes(micState.status);
-
-  if (STATIC_BUILD && !existingRecordingId) {
-    return (
-      <div className="space-y-3">
-        {showPromptText && promptText && <p className="rounded-xl border border-line bg-surface p-4 text-lg text-ink">{promptText}</p>}
-        <StaticMicNotice />
-        {onSkip && (
-          <Button variant="outline" onClick={() => onSkip('no-mic')}>
-            Continuar sin grabar
-          </Button>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

@@ -9,6 +9,7 @@ import { MicSetupPanel } from '@/modules/speaking/ui/MicPanel';
 import { clearAllData, clearSpeakingHistory } from '@/modules/storage/repositories';
 import { exportAll, importAll } from '@/modules/storage/export-import';
 import type { Theme } from './settings';
+import { STATIC_BUILD } from '@/lib/runtime';
 
 export function SettingsPage() {
   const { settings, update } = useSettings();
@@ -117,13 +118,13 @@ export function SettingsPage() {
             <Switch id="p-save" checked={settings.saveRecordings} onCheckedChange={(v) => update({ saveRecordings: v })} label="Guardar grabaciones de Speaking localmente" />
             <Select id="p-consent" label="Envío de audio/texto a proveedores" value={settings.cloudConsent} onChange={(v) => update({ cloudConsent: v as 'ask' | 'granted' | 'denied' })} options={[{ value: 'ask', label: 'Preguntar cada sesión' }, { value: 'granted', label: 'Permitir siempre' }, { value: 'denied', label: 'Nunca (solo análisis local)' }]} />
             <div className="space-y-2 rounded-lg bg-surface-3 p-3">
-              <p className="flex items-center gap-2 font-medium text-ink"><Server className="h-4 w-4" /> Servidor local {caps ? <Badge tone="ok">conectado · v{caps.version}</Badge> : <Badge>no disponible</Badge>}</p>
+              <p className="flex items-center gap-2 font-medium text-ink"><Server className="h-4 w-4" /> {STATIC_BUILD ? <>Versión publicada <Badge>sin servidor local</Badge></> : <>Servidor local {caps ? <Badge tone="ok">conectado · v{caps.version}</Badge> : <Badge>no disponible</Badge>}</>}</p>
               {caps && (
                 <ul className="space-y-1 text-xs text-ink-2">
                   <li>Transcripción: {caps.stt.configured ? `${caps.stt.provider} (${caps.stt.model})` : 'no configurada'}</li>
                   <li>Pronunciación: {caps.pronunciation.configured ? caps.pronunciation.provider : 'no configurada'}</li>
                   <li>Evaluador IA: {caps.evaluator.configured ? `${caps.evaluator.provider} (${caps.evaluator.model})` : 'no configurado'}</li>
-                  <li>Límites: {Math.round(caps.limits.maxAudioBytes / 1024 / 1024)} MB · {caps.limits.minAudioSec}–{caps.limits.maxAudioSec} s por audio</li>
+                  {!STATIC_BUILD && <li>Límites: {Math.round(caps.limits.maxAudioBytes / 1024 / 1024)} MB · {caps.limits.minAudioSec}–{caps.limits.maxAudioSec} s por audio</li>}
                   <li>{caps.storage}</li>
                 </ul>
               )}
