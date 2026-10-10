@@ -65,7 +65,7 @@ export const toeflIbt2026: ExamBlueprint = {
           timeLimitSec: 13 * 60,
           parts: [
             { task: 'complete-words', sets: 1, difficulty: ['medium'] },
-            { task: 'daily-life', sets: 2, difficulty: ['easy', 'medium'] },
+            { task: 'daily-life', sets: 2, difficulty: ['medium', 'easy'] },
             { task: 'academic-passage', sets: 1, difficulty: ['medium'] },
           ],
         },

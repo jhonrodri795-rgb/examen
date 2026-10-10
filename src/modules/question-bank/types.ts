@@ -101,6 +101,8 @@ interface SetBase {
   difficulty: Difficulty;
   /** Pack de origen (built-in o importado por el usuario). */
   source?: string;
+  /** Formulario de simulación completa al que pertenece (1–20). Sin él, contenido general de práctica. */
+  form?: number;
 }
 
 // ---------- Reading ----------
