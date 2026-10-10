@@ -45,7 +45,7 @@ npm run dev          # abre http://localhost:5173  (frontend + API en un solo pr
 
 - **Evaluación con Claude (Writing y Speaking):** la página pide la evaluación a Claude a través de la cuenta de claude.ai de quien la abre (consume su uso; claude.ai pide permiso la primera vez). No hay claves en la página. Se usan la misma rúbrica, el mismo esquema de salida y las mismas comprobaciones de citas literales que en el servidor (`shared/evaluation.ts`). Fuera de claude.ai, o si se deniega el permiso, se usa el análisis local.
 - **Speaking en la versión publicada:** la página comprueba sin pedir nada si el contenedor permite el micrófono (`document.featurePolicy.allowsFeature('microphone')`).
-  - **Bloqueado (visor de claude.ai):** lo dice claramente («Esta página no puede grabar tu voz») y guía el **dictado del sistema** detectado (Win + H en Windows, doble Fn en macOS, 🎤 del teclado en móvil, Buscar + D en ChromeOS) con una **prueba de dictado** previa (avisa si el texto sale en español). Durante la respuesta recuerda que la página no graba, avisa si no llega texto y, si termina vacía, ofrece escribirla o repetir; nunca exige audio. Subir un audio grabado con otra app es opcional (mide pausas y ritmo en el navegador; nunca se envía).
+  - **Bloqueado (visor de claude.ai):** para calificar la **fluidez**, el estudiante se graba con la grabadora de su dispositivo (indicada según el sistema: «Grabadora de sonido» en Windows, «Notas de voz» en Mac/iPhone, «Grabadora» en Android) mientras responde con el cronómetro, y sube el audio. La página **detecta el pitido de inicio (880 Hz) y el de fin (660 Hz)** para analizar solo la respuesta (con recorte manual) y mide ritmo, pausas y entonación en el navegador; el audio nunca se envía. Opcional: dictar (Win + H, doble Fn, 🎤 del teclado; con prueba previa que avisa si sale en español) o escribir la respuesta para evaluar también gramática y contenido.
   - **Permitido:** graba con el micrófono tras pulsar «Empezar» (métricas acústicas reales) y, si el usuario lo activa con aviso de privacidad, transcribe en vivo con el reconocimiento de voz del navegador (Web Speech API; envía el audio al fabricante del navegador). Se puede seguir dictando o escribiendo.
   - Sin audio, la fluidez se marca «No evaluable».
 - No hay transcripción automática ni evaluación de pronunciación; la evaluación indica que la transcripción es propia.
@@ -141,12 +141,23 @@ Se calcula en el navegador sobre la señal decodificada: detección de voz por e
 - La transcripción se puede **corregir para estudiar**; la original se conserva y es la que se usa para evaluar.
 - No se usa la Web Speech API como mecanismo de transcripción.
 
-### Pronunciación — **real solo si se configura Azure**
-- Con `PRONUNCIATION_PROVIDER=azure`, Listen and Repeat se evalúa con *Azure AI Speech Pronunciation Assessment* (audio convertido a WAV 16 kHz mono en el navegador; precisión, fluidez, completitud, prosodia y precisión por palabra).
-- Sin ese servicio **no se puntúa la pronunciación**; el informe lo indica expresamente. Un acento no nativo nunca se trata como error.
-- La integración con Azure se implementó según la API REST documentada y se probó con respuestas simuladas; no se pudo verificar contra el servicio real en este entorno.
+### Pronunciación, fluidez y prosodia con Azure — **real solo si se configura**
+- Con `AZURE_SPEECH_KEY` y `AZURE_SPEECH_REGION` (una sola clave), Azure AI Speech **transcribe** la respuesta y puntúa **pronunciación, precisión, fluidez y prosodia** en la misma llamada (REST de audio corto, hasta 60 s; el navegador convierte el audio a WAV 16 kHz mono).
+- **Listen and Repeat:** evaluación con guion frente a la frase de referencia (incluye completitud y omisiones).
+- **Interview:** evaluación **sin guion** (sin frase de referencia), con palabras de baja precisión marcadas en el informe («Palabras a practicar»).
+- Las puntuaciones (0–100) son del servicio externo, no de ETS. Un acento no nativo no se trata como error.
+- Coste orientativo: se factura como reconocimiento de voz por hora de audio (céntimos por respuesta); el plan gratuito F0 incluye horas de reconocimiento al mes, pero comprueba en la página de precios de Azure si cubre la evaluación de pronunciación.
+- La integración sigue la API REST documentada (encabezado `Pronunciation-Assessment` con `EnableProsodyAssessment`; sin `ReferenceText` para la evaluación sin guion) y se probó con respuestas simuladas; **no se pudo verificar contra el servicio real en este entorno**.
+
+**Configuración paso a paso (app local):**
+1. En [portal.azure.com](https://portal.azure.com): Crear un recurso → **Speech** (Voz) → elige región (p. ej. `eastus`, `westeurope`) y plan.
+2. En el recurso: **Claves y punto de conexión** → copia **CLAVE 1** y la **Ubicación/Región**.
+3. En la carpeta del proyecto: copia `.env.example` a `.env` y rellena `AZURE_SPEECH_KEY=` y `AZURE_SPEECH_REGION=`.
+4. Opcional, para que Claude redacte la calificación: `ANTHROPIC_API_KEY=` (sin ella se usa la evaluación por reglas).
+5. `npm install` y `npm run dev` → abre `http://localhost:5173/speaking`, activa el micrófono y practica.
 
 ### Evaluación
+- **Fluidez medida en el audio (siempre, sin servicios):** núcleos silábicos por picos de intensidad sonoros (inspirado en De Jong & Wempe, 2009) → velocidad de habla y de articulación (sílabas/s) y sílabas entre pausas; tono (F0) por autocorrelación → rango y variación en semitonos (entonación monótona o variada). Validado con señales sintéticas y voz de espeak-ng (recuento de sílabas ±10 %). Las bandas que muestra el informe son orientativas, no conversiones TOEFL. Con solo audio (sin texto), Claude califica únicamente Delivery.
 - **Con IA** (`EVALUATOR_PROVIDER=anthropic`, modelo por defecto `claude-opus-5-5`, SDK oficial con salida estructurada validada con Zod y *fallback* del servidor de Anthropic activado): rúbrica Delivery / Language use / Topic development / Task fulfillment (0–4), aspectos positivos, errores con cita, fragmentos a revisar, versión mejorada, ejercicios y consejos. El servidor **verifica que cada cita aparece literalmente en la transcripción** y descarta las que no; un criterio sin evidencia verificable queda como «No evaluable»; Delivery no se puntúa sin métricas de audio. El audio no se envía al evaluador, solo la transcripción y las métricas.
 - **Con Claude en la versión publicada** (capacidad `sample` del visor de claude.ai): mismo prompt, esquema JSON (generado desde Zod) y post-procesado que el servidor; la respuesta se valida con Zod en el navegador. Solo se envía texto (transcripción propia, enunciado y métricas). Errores del visor (`not_granted`, `rate_limited`, etc.) se traducen a mensajes claros; un permiso denegado oculta la función.
 - **Sin IA**: evaluación heurística con reglas explícitas (pausas, ritmo, muletillas, conectores, extensión, coincidencia de palabras clave, precisión de repetición), siempre marcada como tal.
@@ -293,7 +304,7 @@ El motor del examen (`exam-engine/engine.ts`) es un conjunto de funciones puras 
 ## Pruebas
 
 ```bash
-npm test             # 127 pruebas (Vitest)
+npm test             # 147 pruebas (Vitest)
 npm run test:e2e     # 11 pruebas (Playwright, Chromium con dispositivo de audio simulado)
 ```
 
@@ -304,6 +315,8 @@ Cubren, entre otros:
 - **Almacenamiento:** guardado/recuperación, rechazo de revisiones antiguas, autoguardado de borradores, grabaciones, borrado de datos, exportación/importación con audio.
 - **Speaking:** permiso concedido/denegado, sin micrófono, micrófono ocupado, contexto inseguro, cambio y desconexión de dispositivo, pista finalizada, liberación de pistas, selección de formato, grabación manual, **fin automático por límite de tiempo**, error de grabación, interrupción, grabación vacía/corta/larga, VAD (pausas, silencio, zumbido estacionario, saturación, volumen bajo), métricas de transcripción, alineación, evaluación heurística.
 - **Servidor:** configuración, validación de audio (vacío, corto, largo, grande, firma falsa, tipo no admitido), API no configurada (503), consentimiento obligatorio (428), transcripción correcta/fallida/tiempo agotado/sin voz, duración real excesiva, límite de uso (429), tamaño de cuerpo (413), validación de cuerpos, mapeo de respuestas de OpenAI, Deepgram y Azure, verificación de evidencias del evaluador.
+- **Fluidez y prosodia:** F0 por autocorrelación, remuestreo, recuento de sílabas y velocidad con sílabas sintéticas, efecto de las pausas, rango de tono (plano frente a variado), baja fiabilidad con poca voz; detección de los pitidos de inicio y fin (también atenuados), sin falsos positivos con voz, varios intentos en un audio.
+- **Azure:** configuración con y sin guion (sin `ReferenceText`), transcripción con tiempos por palabra y pronunciación en la misma llamada, WAV 16 kHz obligatorio, límite de 60 s, una sola clave activa ambos servicios, la clave nunca aparece en `/api/capabilities`.
 - **Versión publicada:** evaluador con Claude simulado (prompt con rúbrica y esquema, validación, citas inventadas descartadas, respuestas truncadas o mal formadas, permiso denegado, límite de uso, sin visor), respuesta de Speaking solo con texto, Delivery no evaluable sin audio, detección del sistema y del idioma del dictado, política de micrófono del contenedor, transcripción en vivo del navegador (reinicios, errores), Listen and Repeat con texto dictado, recurso a la heurística si Claude deja de estar disponible.
 - **E2E:** todas las páginas sin errores; Reading completo en modo examen (navegación, marcado, módulo adaptativo, resultados, revisión); recarga con recuperación; Listening sin retroceso; autoguardado de Writing; micrófono simulado con prueba, grabación y análisis; Speaking en modo examen con fin por tiempo y avance automático; permiso denegado y omisión de la sección; consentimiento, transcripción y evaluación con IA (red interceptada en la prueba), rechazo del consentimiento sin llamadas externas, transcripción fallida y evaluación incompleta con informe parcial.
 

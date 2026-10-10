@@ -148,7 +148,7 @@ test('Speaking: micrófono simulado, prueba de audio, grabación y análisis loc
   await expect(page.getByText('Grabando')).toBeVisible({ timeout: 45_000 });
   await page.waitForTimeout(3000);
   await page.getByRole('button', { name: 'Terminar respuesta' }).click();
-  await expect(page.getByRole('heading', { name: 'Métricas acústicas' })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: 'Pausas y señal' })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText('Tiempo de habla')).toBeVisible();
   await expect(page.getByText(/Modo sin IA/)).toBeVisible();
 

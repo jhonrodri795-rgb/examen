@@ -40,6 +40,8 @@ export interface Transcript {
     fillerDetection: 'provider' | 'prompted' | 'none';
   };
   createdAt: number;
+  /** Evaluación de pronunciación obtenida en la misma llamada (Azure, sin texto de referencia). */
+  pronunciation?: PronunciationAssessment;
 }
 
 export interface PronunciationAssessment {

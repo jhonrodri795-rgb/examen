@@ -3,13 +3,14 @@
  * Las claves solo viven en el proceso de Node; nunca se envían al navegador.
  */
 
-export type SttProviderName = 'openai' | 'deepgram';
+export type SttProviderName = 'openai' | 'deepgram' | 'azure';
 export type EffortLevel = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 export interface ServerConfig {
   stt:
     | { provider: 'openai'; apiKey: string; baseUrl: string; model: string }
     | { provider: 'deepgram'; apiKey: string; model: string }
+    | { provider: 'azure'; key: string; region: string }
     | { provider: null };
   pronunciation: { provider: 'azure'; key: string; region: string } | { provider: null };
   evaluator: { provider: 'anthropic'; model: string; effort: EffortLevel; apiKey: string | null } | { provider: null };
@@ -29,7 +30,8 @@ const num = (v: string | undefined, d: number) => {
 };
 
 export function loadServerConfig(env: Record<string, string | undefined>): ServerConfig {
-  const sttName = (env.STT_PROVIDER ?? (env.OPENAI_API_KEY ? 'openai' : env.DEEPGRAM_API_KEY ? 'deepgram' : 'none')).toLowerCase();
+  const azureReady = !!(env.AZURE_SPEECH_KEY && env.AZURE_SPEECH_REGION);
+  const sttName = (env.STT_PROVIDER ?? (env.OPENAI_API_KEY ? 'openai' : env.DEEPGRAM_API_KEY ? 'deepgram' : azureReady ? 'azure' : 'none')).toLowerCase();
   let stt: ServerConfig['stt'] = { provider: null };
   if (sttName === 'openai' && env.OPENAI_API_KEY) {
     stt = {
@@ -40,6 +42,8 @@ export function loadServerConfig(env: Record<string, string | undefined>): Serve
     };
   } else if (sttName === 'deepgram' && env.DEEPGRAM_API_KEY) {
     stt = { provider: 'deepgram', apiKey: env.DEEPGRAM_API_KEY, model: env.DEEPGRAM_MODEL ?? 'nova-3' };
+  } else if (sttName === 'azure' && azureReady) {
+    stt = { provider: 'azure', key: env.AZURE_SPEECH_KEY!, region: env.AZURE_SPEECH_REGION! };
   }
 
   const pronName = (env.PRONUNCIATION_PROVIDER ?? (env.AZURE_SPEECH_KEY ? 'azure' : 'none')).toLowerCase();

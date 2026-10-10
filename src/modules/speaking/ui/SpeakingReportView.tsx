@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, Bot, Calculator, Download, FileJson, Gauge, Loader2, Pencil, RotateCcw, Trash2, Wand2 } from 'lucide-react';
-import type { Criterion, ProsodyMetrics, SpeakingEvaluation } from '@shared/speaking-types';
+import type { Criterion, PronunciationAssessment, ProsodyMetrics, SpeakingEvaluation } from '@shared/speaking-types';
 import { useCapabilities, useConsent, useSettings, useToast } from '@/app/context';
 import { Alert, Badge, Button, Card, CardHeader, ConfirmDialog } from '@/components/ui';
 import { downloadBlob, downloadText } from '@/lib/api';
@@ -131,6 +131,46 @@ export function FluencyPanel({ p }: { p: ProsodyMetrics }) {
   );
 }
 
+/** Puntuaciones del servicio fonético y palabras con baja precisión. */
+function PronunciationPanel({ p }: { p: PronunciationAssessment }) {
+  const scripted = !!p.referenceText.trim();
+  const weak = p.words.filter((w) => (w.accuracy != null && w.accuracy < 60) || (w.errorType && w.errorType !== 'None')).slice(0, 15);
+  const scores: [string, number | null][] = [
+    ['Pronunciación', p.pronunciation],
+    ['Precisión', p.accuracy],
+    ['Fluidez', p.fluency],
+    ['Prosodia', p.prosody],
+    ...(scripted ? ([['Completitud', p.completeness]] as [string, number | null][]) : []),
+  ];
+  return (
+    <div className="space-y-2 rounded-lg border border-line p-3">
+      <p className="font-semibold text-ink">Evaluación fonética ({p.provider}{scripted ? ', frente a la frase de referencia' : ', respuesta libre'})</p>
+      <dl className="flex flex-wrap gap-2">
+        {scores.map(([k, v]) => (
+          <div key={k} className="rounded-md bg-surface-3 px-2 py-1 text-xs">
+            <dt className="text-muted">{k}</dt>
+            <dd className="font-semibold tabular-nums text-ink">{v ?? '—'}<span className="font-normal text-muted">/100</span></dd>
+          </div>
+        ))}
+      </dl>
+      {weak.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-ink">Palabras a practicar</p>
+          <p className="mt-1 flex flex-wrap gap-1.5">
+            {weak.map((w, i) => (
+              <span key={i} className="rounded bg-warn-soft px-1.5 py-0.5 text-xs text-warn" title={w.errorType !== 'None' ? w.errorType : undefined}>
+                {w.word}
+                {w.accuracy != null && <span className="ml-1 tabular-nums opacity-80">{Math.round(w.accuracy)}</span>}
+              </span>
+            ))}
+          </p>
+        </div>
+      )}
+      <p className="text-xs text-muted">Puntuaciones del servicio externo (0–100), no de ETS. Un acento no nativo no es un error: fíjate en las palabras con puntuación baja de forma repetida.</p>
+    </div>
+  );
+}
+
 function reportToMarkdown(task: SpeakingTaskInfo, r: SpeakingReportRecord): string {
   const ev = r.evaluation;
   const a = r.acoustic;
@@ -153,6 +193,7 @@ function reportToMarkdown(task: SpeakingTaskInfo, r: SpeakingReportRecord): stri
   if (a?.prosody) lines.push(`- Fluidez (estimación): ${a.prosody.speechRateSps ?? '—'} sílabas/s (articulación ${a.prosody.articulationRateSps ?? '—'}) · tramos de ${a.prosody.meanRunSyllables ?? '—'} sílabas · variación de tono ${a.prosody.f0RangeSt ?? '—'} semitonos${a.prosody.reliability === 'low' ? ' (baja fiabilidad)' : ''}`);
   if (m) lines.push(`- Palabras: ${m.wordCount} · Ritmo: ${m.wordsPerMinute ?? '—'} ppm · Muletillas: ${m.fillerCount}`);
   if (r.repeatAccuracy) lines.push('', `## Precisión de la repetición: ${Math.round(r.repeatAccuracy.accuracy * 100)} %`);
+  if (r.pronunciation) lines.push('', `## Evaluación fonética (${r.pronunciation.provider})`, `Pronunciación ${r.pronunciation.pronunciation ?? '—'} · Precisión ${r.pronunciation.accuracy ?? '—'} · Fluidez ${r.pronunciation.fluency ?? '—'} · Prosodia ${r.pronunciation.prosody ?? '—'} (0–100)`);
   if (ev) {
     lines.push('', `## Evaluación (${ev.mode === 'ai' ? `IA: ${ev.provider} · ${ev.model}` : 'heurística local'})`, `Global: ${ev.overall ?? '—'}/4`);
     for (const c of ev.criteria) lines.push(`- **${CRITERION_LABEL[c.criterion]}**: ${c.score ?? 'no evaluable'}${c.score != null ? '/4' : ''} — ${c.rationale}${c.evidence.length ? ` (evidencia: ${c.evidence.map((e) => `«${e.quote}»`).join('; ')})` : ''}`);
@@ -428,14 +469,7 @@ export function SpeakingReportView({
                     <p className="mt-1 text-xs text-muted">Tachado = omitida · ámbar = sustituida · +azul = añadida. Algunas diferencias pueden deberse {report.transcript?.provider === 'self' ? 'al dictado o a la escritura.' : 'al reconocimiento automático.'}</p>
                   </div>
                 )}
-                {report.pronunciation && (
-                  <div className="rounded-lg border border-line p-3">
-                    <p className="font-semibold text-ink">Evaluación fonética ({report.pronunciation.provider})</p>
-                    <p className="text-xs text-ink-2">
-                      Precisión {report.pronunciation.accuracy ?? '—'} · Fluidez {report.pronunciation.fluency ?? '—'} · Completitud {report.pronunciation.completeness ?? '—'} · Prosodia {report.pronunciation.prosody ?? '—'} (0–100)
-                    </p>
-                  </div>
-                )}
+                {report.pronunciation && <PronunciationPanel p={report.pronunciation} />}
               </div>
             </Card>
           </div>

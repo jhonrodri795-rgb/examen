@@ -1,5 +1,7 @@
 import type { Transcript, TranscriptSegment, TranscriptWord } from '../../../shared/speaking-types.ts';
-import { httpProviderError, readErrorBody, type SttProvider } from './types.ts';
+import { httpProviderError, ProviderError, readErrorBody, type SttProvider } from './types.ts';
+import { AZURE_SHORT_AUDIO_MAX_SEC, callAzure, mapAzureResponse, type AzureResponse } from './pronunciation.ts';
+import { parseWav } from '../validation.ts';
 
 const FILLERS = new Set(['um', 'uh', 'erm', 'er', 'hmm', 'mm', 'ah', 'eh', 'uhm', 'umm', 'uhh', 'mhm']);
 const clean = (w: string) => w.toLowerCase().replace(/[^a-z']/g, '');
@@ -137,6 +139,51 @@ export function createDeepgramStt(cfg: { apiKey: string; model: string }, fetchI
       });
       if (!res.ok) throw httpProviderError('Deepgram', res, await readErrorBody(res));
       return mapDeepgramResponse((await res.json()) as DeepgramResponse, cfg.model);
+    },
+  };
+}
+
+/** Transcripción con Azure (REST de audio corto) + evaluación de pronunciación sin guion en la misma llamada. */
+export function mapAzureTranscript(json: AzureResponse): Transcript {
+  const best = json.NBest?.[0];
+  const pronunciation = mapAzureResponse(json, '');
+  const words: TranscriptWord[] = (best?.Words ?? [])
+    .filter((w) => typeof w.Offset === 'number' && typeof w.Duration === 'number')
+    .map((w) => ({ word: w.Word, start: w.Offset! / 1e7, end: (w.Offset! + w.Duration!) / 1e7, filler: FILLERS.has(clean(w.Word)) || undefined }));
+  const text = (best?.Display ?? json.DisplayText ?? '').trim();
+  const start = typeof json.Offset === 'number' ? json.Offset / 1e7 : words[0]?.start ?? 0;
+  const end = typeof json.Duration === 'number' ? start + json.Duration / 1e7 : words.at(-1)?.end ?? 0;
+  return {
+    provider: 'azure',
+    model: 'speech-to-text (audio corto)',
+    text,
+    language: 'en-US',
+    durationSec: end > 0 ? Math.round(end * 100) / 100 : undefined,
+    words,
+    segments: text ? [{ text, start, end, confidence: typeof best?.Confidence === 'number' ? Math.round(best.Confidence * 100) / 100 : undefined }] : [],
+    capabilities: { wordTimestamps: words.length > 0, wordConfidence: false, segmentConfidence: typeof best?.Confidence === 'number', fillerDetection: 'none' },
+    createdAt: Date.now(),
+    pronunciation,
+  };
+}
+
+export function createAzureStt(cfg: { key: string; region: string; withPronunciation: boolean }, fetchImpl: typeof fetch = fetch): SttProvider {
+  return {
+    name: 'azure',
+    model: 'speech-to-text (audio corto)',
+    dataPolicy: `El audio de la respuesta (WAV 16 kHz) se envía a Azure AI Speech (región ${cfg.region}) para transcribirlo${cfg.withPronunciation ? ' y puntuar pronunciación, fluidez y prosodia en la misma llamada' : ''}. El servidor local no lo almacena.`,
+    async transcribe(audio, mime, { signal }) {
+      const wav = parseWav(audio);
+      if (!mime.includes('wav') || !wav || wav.sampleRate !== 16000 || wav.channels !== 1 || wav.bitsPerSample !== 16) {
+        throw new ProviderError(415, 'wav_format', 'Azure requiere audio WAV PCM de 16 bits, mono, 16 kHz.');
+      }
+      if (wav.durationSec > AZURE_SHORT_AUDIO_MAX_SEC + 0.5) {
+        throw new ProviderError(422, 'audio_too_long', `Azure (audio corto) admite hasta ${AZURE_SHORT_AUDIO_MAX_SEC} s por respuesta.`);
+      }
+      // Sin guion (sin frase de referencia): la puntuación de pronunciación se omite si no está activada.
+      const json = await callAzure(cfg, audio, '', signal, fetchImpl);
+      const t = mapAzureTranscript(json);
+      return cfg.withPronunciation ? t : { ...t, pronunciation: undefined };
     },
   };
 }

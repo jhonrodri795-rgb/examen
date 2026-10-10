@@ -7,7 +7,7 @@ import { ACCEPTED_AUDIO_TYPES, parseWav, validateAudio } from './validation.ts';
 import { createRateLimiter } from './rate-limit.ts';
 import { createAnthropicEvaluator } from './providers/anthropic.ts';
 import { createAzurePronunciation } from './providers/pronunciation.ts';
-import { createDeepgramStt, createOpenAiStt } from './providers/stt.ts';
+import { createAzureStt, createDeepgramStt, createOpenAiStt } from './providers/stt.ts';
 import { ProviderError, type Evaluator, type PronunciationProvider, type SttProvider } from './providers/types.ts';
 
 export const API_VERSION = '1.0.0';
@@ -28,7 +28,9 @@ function buildProviders(cfg: ServerConfig, deps: AppDeps) {
         ? createOpenAiStt(cfg.stt)
         : cfg.stt.provider === 'deepgram'
           ? createDeepgramStt(cfg.stt)
-          : null;
+          : cfg.stt.provider === 'azure'
+            ? createAzureStt({ key: cfg.stt.key, region: cfg.stt.region, withPronunciation: cfg.pronunciation.provider === 'azure' })
+            : null;
   const pronunciation = deps.pronunciation !== undefined ? deps.pronunciation : cfg.pronunciation.provider === 'azure' ? createAzurePronunciation(cfg.pronunciation) : null;
   const evaluator =
     deps.evaluator !== undefined
@@ -163,10 +165,11 @@ export function createApp(cfg: ServerConfig, deps: AppDeps = {}) {
 
   app.post('/api/speaking/pronunciation', audioLimit, guarded, async (c) => {
     if (!pronunciation) return fail(c, 503, 'pronunciation_not_configured', 'No hay un servicio de evaluación de pronunciación configurado.');
+    // Sin frase de referencia: evaluación sin guion (respuestas libres de Interview).
     const referenceText = (c.req.query('referenceText') ?? '').trim();
-    if (!referenceText || referenceText.length > 500) return fail(c, 400, 'missing_reference', 'Falta la frase de referencia.');
+    if (referenceText.length > 500) return fail(c, 400, 'reference_too_long', 'La frase de referencia es demasiado larga.');
     const bytes = new Uint8Array(await c.req.arrayBuffer());
-    const v = validateAudio(bytes, c.req.header('content-type'), null, { ...cfg.limits, maxAudioSec: Math.min(cfg.limits.maxAudioSec, 30) });
+    const v = validateAudio(bytes, c.req.header('content-type'), null, { ...cfg.limits, maxAudioSec: Math.min(cfg.limits.maxAudioSec, 60) });
     if (!v.ok) return fail(c, v.status, v.code, v.message);
     const wav = parseWav(bytes);
     if (!wav || wav.sampleRate !== 16000 || wav.channels !== 1 || wav.bitsPerSample !== 16) {

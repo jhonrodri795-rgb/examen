@@ -73,7 +73,9 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
   }
 
   const wantStt = !!ctx.caps?.stt.configured && audio && !selfTranscript;
-  const wantPron = audio && ctx.task.type === 'listen-repeat' && !!ctx.caps?.pronunciation.configured && !!ctx.task.referenceText;
+  // Pronunciación: con guion en Listen and Repeat (frase de referencia); sin guion en respuestas libres.
+  const scripted = ctx.task.type === 'listen-repeat' && !!ctx.task.referenceText;
+  const wantPron = audio && !!ctx.caps?.pronunciation.configured;
   const wantEval = !!ctx.caps?.evaluator.configured;
   const services = [wantStt && 'stt', wantPron && 'pronunciation', wantEval && 'evaluator'].filter(Boolean) as ('stt' | 'pronunciation' | 'evaluator')[];
   const consented = services.length ? await ctx.consent(services) : false;
@@ -87,7 +89,15 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
   } else if (wantStt && consented && !report.transcript) {
     ctx.onStep?.('transcribe');
     try {
-      report.transcript = await transcribe(new Blob([rec.data], { type: rec.mimeType }), rec.mimeType, rec.durationMs);
+      // Azure (audio corto) requiere WAV PCM 16 kHz mono: se convierte en el navegador.
+      if (ctx.caps?.stt.provider === 'azure') {
+        const wav = await toWav16kMono(rec.data);
+        report.transcript = await transcribe(new Blob([wav], { type: 'audio/wav' }), 'audio/wav', rec.durationMs);
+      } else {
+        report.transcript = await transcribe(new Blob([rec.data], { type: rec.mimeType }), rec.mimeType, rec.durationMs);
+      }
+      // La evaluación sin guion llega en la misma llamada: no se repite.
+      if (report.transcript.pronunciation && !scripted && !report.pronunciation) report.pronunciation = report.transcript.pronunciation;
       report.transcriptError = undefined;
     } catch (e) {
       report.transcriptError = msg(e);
@@ -109,12 +119,12 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
     }
   }
 
-  // 4. Pronunciación (solo con texto de referencia)
+  // 4. Pronunciación (con guion en Listen and Repeat; sin guion en respuestas libres)
   if (wantPron && consented && !report.pronunciation) {
     ctx.onStep?.('pronunciation');
     try {
       const wav = await toWav16kMono(rec.data);
-      report.pronunciation = await assessPronunciation(wav, ctx.task.referenceText!);
+      report.pronunciation = await assessPronunciation(wav, scripted ? ctx.task.referenceText! : '');
     } catch (e) {
       report.evaluationError = `Evaluación fonética no disponible: ${msg(e)}`;
     }

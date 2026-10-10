@@ -85,8 +85,10 @@ export function transcribe(audio: Blob, mimeType: string, durationMs: number): P
   });
 }
 
-export function assessPronunciation(wav: ArrayBuffer, referenceText: string): Promise<PronunciationAssessment> {
-  return request<PronunciationAssessment>(`/api/speaking/pronunciation?referenceText=${encodeURIComponent(referenceText)}`, {
+/** Sin frase de referencia, la evaluación es sin guion (respuestas libres). */
+export function assessPronunciation(wav: ArrayBuffer, referenceText = ''): Promise<PronunciationAssessment> {
+  const q = referenceText.trim() ? `?referenceText=${encodeURIComponent(referenceText)}` : '';
+  return request<PronunciationAssessment>(`/api/speaking/pronunciation${q}`, {
     method: 'POST',
     headers: { 'content-type': 'audio/wav', ...CONSENT_HEADER },
     body: wav,

@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { createApp } from './app.ts';
 import { loadServerConfig } from './config.ts';
 import { parseWav, sniffContainer, validateAudio } from './validation.ts';
-import { mapDeepgramResponse, mapWhisperResponse, createOpenAiStt } from './providers/stt.ts';
-import { mapAzureResponse } from './providers/pronunciation.ts';
+import { mapDeepgramResponse, mapWhisperResponse, createOpenAiStt, createAzureStt, mapAzureTranscript } from './providers/stt.ts';
+import { azureAssessmentHeader, createAzurePronunciation, mapAzureResponse } from './providers/pronunciation.ts';
 import { postProcessSpeaking, postProcessWriting, quoteIsVerbatim } from './providers/anthropic.ts';
 import { ProviderError, type Evaluator, type SttProvider } from './providers/types.ts';
 import type { Transcript } from '../../shared/speaking-types.ts';
@@ -175,6 +175,83 @@ describe('API', () => {
     const good = await app.request('/api/speaking/pronunciation?referenceText=Hello%20there', { method: 'POST', headers: { 'content-type': 'audio/wav', ...consent }, body: wav(2) as Uint8Array<ArrayBuffer> });
     expect(good.status).toBe(200);
     expect(pron.assess).toHaveBeenCalledOnce();
+    // Sin frase de referencia: evaluación sin guion (respuesta libre de Interview), hasta 60 s.
+    const free = await app.request('/api/speaking/pronunciation', { method: 'POST', headers: { 'content-type': 'audio/wav', ...consent }, body: wav(45) as Uint8Array<ArrayBuffer> });
+    expect(free.status).toBe(200);
+    expect(pron.assess).toHaveBeenLastCalledWith(expect.any(Uint8Array), '', expect.anything());
+  });
+});
+
+describe('Azure AI Speech (respuestas simuladas según la API REST de audio corto)', () => {
+  // Forma documentada de la respuesta con format=detailed y Pronunciation-Assessment (sin guion).
+  const unscripted = {
+    RecognitionStatus: 'Success', Offset: 5_000_000, Duration: 32_000_000, DisplayText: 'I usually study in the library.',
+    NBest: [{
+      Confidence: 0.93, Lexical: 'i usually study in the library', Display: 'I usually study in the library.',
+      PronunciationAssessment: { AccuracyScore: 84, FluencyScore: 76, ProsodyScore: 71, PronScore: 78 },
+      Words: [
+        { Word: 'i', Offset: 5_000_000, Duration: 2_000_000, PronunciationAssessment: { AccuracyScore: 98, ErrorType: 'None' } },
+        { Word: 'usually', Offset: 7_500_000, Duration: 5_000_000, PronunciationAssessment: { AccuracyScore: 41, ErrorType: 'Mispronunciation' } },
+        { Word: 'study', Offset: 13_000_000, Duration: 4_000_000, PronunciationAssessment: { AccuracyScore: 90, ErrorType: 'None' } },
+      ],
+    }],
+  };
+
+  it('configura la evaluación con guion o sin guion', () => {
+    const scripted = JSON.parse(Buffer.from(azureAssessmentHeader('Hello there.'), 'base64').toString());
+    expect(scripted).toMatchObject({ ReferenceText: 'Hello there.', EnableMiscue: true, EnableProsodyAssessment: true, Granularity: 'Word' });
+    const free = JSON.parse(Buffer.from(azureAssessmentHeader(''), 'base64').toString());
+    expect(free).not.toHaveProperty('ReferenceText');
+    expect(free).toMatchObject({ EnableMiscue: false, EnableProsodyAssessment: true });
+  });
+
+  it('obtiene transcripción con tiempos y pronunciación en la misma llamada', () => {
+    const t = mapAzureTranscript(unscripted);
+    expect(t.text).toBe('I usually study in the library.');
+    expect(t.words[1]).toMatchObject({ word: 'usually', start: 0.75, end: 1.25 });
+    expect(t.capabilities).toMatchObject({ wordTimestamps: true, segmentConfidence: true });
+    expect(t.segments[0]!.confidence).toBe(0.93);
+    expect(t.pronunciation).toMatchObject({ referenceText: '', accuracy: 84, fluency: 76, prosody: 71, pronunciation: 78, completeness: null });
+    expect(t.pronunciation!.words[1]).toMatchObject({ word: 'usually', accuracy: 41, errorType: 'Mispronunciation' });
+  });
+
+  it('el proveedor exige WAV 16 kHz, limita a 60 s y no envía la clave al navegador', async () => {
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      expect(String(_url)).toContain('westeurope.stt.speech.microsoft.com');
+      expect((init!.headers as Record<string, string>)['Ocp-Apim-Subscription-Key']).toBe('k');
+      return new Response(JSON.stringify(unscripted), { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const stt = createAzureStt({ key: 'k', region: 'westeurope', withPronunciation: true }, fetchImpl);
+    const signal = new AbortController().signal;
+    await expect(stt.transcribe(WEBM, 'audio/webm', { signal })).rejects.toMatchObject({ code: 'wav_format' });
+    await expect(stt.transcribe(wav(2, 44100), 'audio/wav', { signal })).rejects.toMatchObject({ code: 'wav_format' });
+    await expect(stt.transcribe(wav(61), 'audio/wav', { signal })).rejects.toMatchObject({ code: 'audio_too_long' });
+    const t = await stt.transcribe(wav(3), 'audio/wav', { signal });
+    expect(t.pronunciation?.fluency).toBe(76);
+    expect(stt.dataPolicy).toMatch(/Azure AI Speech/);
+    const noPron = await createAzureStt({ key: 'k', region: 'westeurope', withPronunciation: false }, fetchImpl).transcribe(wav(3), 'audio/wav', { signal });
+    expect(noPron.pronunciation).toBeUndefined();
+  });
+
+  it('una sola clave de Azure activa transcripción y pronunciación; /api/capabilities no expone la clave', async () => {
+    const cfg = loadServerConfig({ AZURE_SPEECH_KEY: 'secret-azure-key', AZURE_SPEECH_REGION: 'westeurope' });
+    expect(cfg.stt).toMatchObject({ provider: 'azure', region: 'westeurope' });
+    expect(cfg.pronunciation).toMatchObject({ provider: 'azure' });
+    const res = await createApp(cfg).request('/api/capabilities');
+    const body = await res.text();
+    expect(body).not.toContain('secret-azure-key');
+    expect(JSON.parse(body).stt).toMatchObject({ configured: true, provider: 'azure' });
+  });
+
+  it('la pronunciación sin guion no envía frase de referencia', async () => {
+    let header = '';
+    const fetchImpl = vi.fn(async (_u: string | URL | Request, init?: RequestInit) => {
+      header = (init!.headers as Record<string, string>)['Pronunciation-Assessment']!;
+      return new Response(JSON.stringify(unscripted), { status: 200 });
+    }) as unknown as typeof fetch;
+    const p = await createAzurePronunciation({ key: 'k', region: 'eastus' }, fetchImpl).assess(wav(3), '', { signal: new AbortController().signal });
+    expect(JSON.parse(Buffer.from(header, 'base64').toString())).not.toHaveProperty('ReferenceText');
+    expect(p.prosody).toBe(71);
   });
 });
 

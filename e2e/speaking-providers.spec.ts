@@ -87,7 +87,7 @@ test('si el usuario rechaza el envío no se contacta con el servicio externo', a
   const dialog = page.getByRole('dialog', { name: '¿Enviar datos a un servicio externo?' });
   await dialog.getByRole('button', { name: 'Ahora no' }).click();
   await expect(page.getByText(/no se otorgó el consentimiento/)).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole('heading', { name: 'Métricas acústicas' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pausas y señal' })).toBeVisible();
   expect(calls).toBe(0);
 });
 
@@ -106,4 +106,46 @@ test('transcripción fallida y evaluación incompleta muestran errores comprensi
   await page.getByRole('button', { name: 'Volver a analizar' }).click();
   await expect(page.getByText(/La evaluación con IA falló/)).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('button', { name: 'prefer' })).toBeVisible();
+});
+
+test('Azure: transcribe en WAV 16 kHz y puntúa la pronunciación sin guion en la misma llamada', async ({ page }) => {
+  const azureCaps = {
+    ...caps,
+    stt: { configured: true, provider: 'azure', model: 'speech-to-text (audio corto)', dataPolicy: 'El audio (WAV 16 kHz) se envía a Azure AI Speech (región westeurope).' },
+    pronunciation: { configured: true, provider: 'azure', model: null, dataPolicy: 'El audio se envía a Azure AI Speech para puntuar pronunciación.' },
+  };
+  let contentType = '';
+  let wavHeader = '';
+  let pronCalls = 0;
+  await page.route('**/api/capabilities', (r) => r.fulfill({ json: azureCaps }));
+  await page.route('**/api/speaking/transcribe**', (r) => {
+    contentType = r.request().headers()['content-type'] ?? '';
+    wavHeader = (r.request().postDataBuffer() ?? Buffer.alloc(0)).subarray(0, 4).toString('ascii');
+    return r.fulfill({
+      json: {
+        ...transcript, provider: 'azure', model: 'speech-to-text (audio corto)',
+        pronunciation: {
+          provider: 'azure', referenceText: '', recognizedText: TEXT, accuracy: 82, fluency: 74, completeness: null, prosody: 69, pronunciation: 77,
+          words: [{ word: 'prefer', accuracy: 45, errorType: 'Mispronunciation' }, { word: 'studying', accuracy: 92, errorType: 'None' }], createdAt: Date.now(),
+        },
+      },
+    });
+  });
+  await page.route('**/api/speaking/pronunciation**', (r) => {
+    pronCalls++;
+    return r.fulfill({ status: 500, json: { error: { code: 'x', message: 'no debería llamarse' } } });
+  });
+  await page.route('**/api/speaking/evaluate', (r) => r.fulfill({ json: evaluation }));
+
+  await recordOpinion(page);
+  const dialog = page.getByRole('dialog', { name: '¿Enviar datos a un servicio externo?' });
+  await expect(dialog).toContainText('Azure AI Speech', { timeout: 20_000 });
+  await dialog.getByRole('button', { name: 'Permitir en esta sesión' }).click();
+
+  await expect(page.getByText('Evaluación fonética (azure, respuesta libre)')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Palabras a practicar')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pausas y señal' })).toBeVisible(); // el tono del micrófono simulado no es voz: sin sílabas que medir
+  expect(contentType).toContain('audio/wav');
+  expect(wavHeader).toBe('RIFF');
+  expect(pronCalls).toBe(0); // la evaluación sin guion llegó con la transcripción
 });
