@@ -11,7 +11,7 @@ import type { RecordingMeta, SpeakingReportRecord } from '@/modules/storage/db';
 import { clearSpeakingHistory, listRecordingMeta, listSpeakingReports } from '@/modules/storage/repositories';
 import { MicSetupPanel } from './MicPanel';
 import { SpeakingRecorder } from './SpeakingRecorder';
-import { DictationHelp } from './StaticSpeakingResponse';
+import { DictationCheck } from './DictationCheck';
 import { STATIC_BUILD } from '@/lib/runtime';
 import { CRITERION_LABEL, SpeakingReportView, type SpeakingTaskInfo } from './SpeakingReportView';
 
@@ -346,12 +346,12 @@ export function SpeakingStudioPage() {
   useEffect(() => () => mic.release(), [mic]);
   return (
     <div>
-      <PageHeader title="Estudio de Speaking" description="Configura el micrófono, practica las tareas del formato 2026 y revisa informes basados en evidencia de tu audio y su transcripción." />
+      <PageHeader title="Estudio de Speaking" description={STATIC_BUILD ? 'Practica las tareas del formato 2026 respondiendo en voz alta (con el dictado de tu sistema o el micrófono, si el visor lo permite) y recibe una evaluación por criterios con Claude.' : 'Configura el micrófono, practica las tareas del formato 2026 y revisa informes basados en evidencia de tu audio y su transcripción.'} />
       <Tabs
         value={tab}
         onValueChange={(v) => setParams({ tab: v }, { replace: true })}
         tabs={[
-          { value: 'mic', label: STATIC_BUILD ? 'Cómo responder' : 'Micrófono', content: <Card className="max-w-2xl space-y-4 p-5"><MicSetupPanel />{STATIC_BUILD && <DictationHelp open />}</Card> },
+          { value: 'mic', label: STATIC_BUILD ? 'Cómo responder' : 'Micrófono', content: <Card className="max-w-2xl space-y-4 p-5"><MicSetupPanel />{STATIC_BUILD && <DictationCheck />}</Card> },
           { value: 'practice', label: 'Practicar', content: <PracticeTab initialItem={params.get('item')} /> },
           { value: 'history', label: 'Historial', content: <HistoryTab /> },
           { value: 'privacy', label: 'Privacidad', content: <PrivacyTab /> },

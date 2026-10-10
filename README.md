@@ -44,7 +44,10 @@ npm run dev          # abre http://localhost:5173  (frontend + API en un solo pr
 `npm run build:artifact` genera `dist-artifact/toefl-prep-studio.html`, un único archivo con toda la aplicación que puede publicarse como página (artefacto de claude.ai, publicado con la capacidad `sample`). En esa versión no hay servidor y el visor no permite el micrófono:
 
 - **Evaluación con Claude (Writing y Speaking):** la página pide la evaluación a Claude a través de la cuenta de claude.ai de quien la abre (consume su uso; claude.ai pide permiso la primera vez). No hay claves en la página. Se usan la misma rúbrica, el mismo esquema de salida y las mismas comprobaciones de citas literales que en el servidor (`shared/evaluation.ts`). Fuera de claude.ai, o si se deniega el permiso, se usa el análisis local.
-- **Speaking sin micrófono:** con cronómetro, el estudiante responde en voz alta y **dicta** la respuesta con el dictado del sistema (Win + H, doble Fn en macOS, micrófono del teclado en el móvil) o la escribe. Opcionalmente **sube un audio** grabado con otra app: se analiza en el navegador (pausas, tiempo de habla, ritmo) y nunca se envía. Sin audio, la fluidez se marca «No evaluable».
+- **Speaking en la versión publicada:** la página comprueba sin pedir nada si el contenedor permite el micrófono (`document.featurePolicy.allowsFeature('microphone')`).
+  - **Bloqueado (visor de claude.ai):** lo dice claramente («Esta página no puede grabar tu voz») y guía el **dictado del sistema** detectado (Win + H en Windows, doble Fn en macOS, 🎤 del teclado en móvil, Buscar + D en ChromeOS) con una **prueba de dictado** previa (avisa si el texto sale en español). Durante la respuesta recuerda que la página no graba, avisa si no llega texto y, si termina vacía, ofrece escribirla o repetir; nunca exige audio. Subir un audio grabado con otra app es opcional (mide pausas y ritmo en el navegador; nunca se envía).
+  - **Permitido:** graba con el micrófono tras pulsar «Empezar» (métricas acústicas reales) y, si el usuario lo activa con aviso de privacidad, transcribe en vivo con el reconocimiento de voz del navegador (Web Speech API; envía el audio al fabricante del navegador). Se puede seguir dictando o escribiendo.
+  - Sin audio, la fluidez se marca «No evaluable».
 - No hay transcripción automática ni evaluación de pronunciación; la evaluación indica que la transcripción es propia.
 - El progreso se guarda en el navegador.
 
@@ -290,7 +293,7 @@ El motor del examen (`exam-engine/engine.ts`) es un conjunto de funciones puras 
 ## Pruebas
 
 ```bash
-npm test             # 114 pruebas (Vitest)
+npm test             # 127 pruebas (Vitest)
 npm run test:e2e     # 11 pruebas (Playwright, Chromium con dispositivo de audio simulado)
 ```
 
@@ -301,7 +304,7 @@ Cubren, entre otros:
 - **Almacenamiento:** guardado/recuperación, rechazo de revisiones antiguas, autoguardado de borradores, grabaciones, borrado de datos, exportación/importación con audio.
 - **Speaking:** permiso concedido/denegado, sin micrófono, micrófono ocupado, contexto inseguro, cambio y desconexión de dispositivo, pista finalizada, liberación de pistas, selección de formato, grabación manual, **fin automático por límite de tiempo**, error de grabación, interrupción, grabación vacía/corta/larga, VAD (pausas, silencio, zumbido estacionario, saturación, volumen bajo), métricas de transcripción, alineación, evaluación heurística.
 - **Servidor:** configuración, validación de audio (vacío, corto, largo, grande, firma falsa, tipo no admitido), API no configurada (503), consentimiento obligatorio (428), transcripción correcta/fallida/tiempo agotado/sin voz, duración real excesiva, límite de uso (429), tamaño de cuerpo (413), validación de cuerpos, mapeo de respuestas de OpenAI, Deepgram y Azure, verificación de evidencias del evaluador.
-- **Versión publicada:** evaluador con Claude simulado (prompt con rúbrica y esquema, validación, citas inventadas descartadas, respuestas truncadas o mal formadas, permiso denegado, límite de uso, sin visor), respuesta de Speaking solo con texto, Delivery no evaluable sin audio, Listen and Repeat con texto dictado, recurso a la heurística si Claude deja de estar disponible.
+- **Versión publicada:** evaluador con Claude simulado (prompt con rúbrica y esquema, validación, citas inventadas descartadas, respuestas truncadas o mal formadas, permiso denegado, límite de uso, sin visor), respuesta de Speaking solo con texto, Delivery no evaluable sin audio, detección del sistema y del idioma del dictado, política de micrófono del contenedor, transcripción en vivo del navegador (reinicios, errores), Listen and Repeat con texto dictado, recurso a la heurística si Claude deja de estar disponible.
 - **E2E:** todas las páginas sin errores; Reading completo en modo examen (navegación, marcado, módulo adaptativo, resultados, revisión); recarga con recuperación; Listening sin retroceso; autoguardado de Writing; micrófono simulado con prueba, grabación y análisis; Speaking en modo examen con fin por tiempo y avance automático; permiso denegado y omisión de la sección; consentimiento, transcripción y evaluación con IA (red interceptada en la prueba), rechazo del consentimiento sin llamadas externas, transcripción fallida y evaluación incompleta con informe parcial.
 
 ---

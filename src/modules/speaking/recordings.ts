@@ -49,7 +49,7 @@ export async function storeRecording(result: RecordingResult, meta: RecordingMet
  * opcionalmente, un audio grabado con otra aplicación.
  */
 export async function storeStaticResponse(
-  input: { audio: Blob | null; durationMs: number; selfTranscript: string },
+  input: { audio: Blob | null; audioSource?: 'mic' | 'upload'; durationMs: number; selfTranscript: string },
   meta: RecordingMetaInput,
   persist: boolean,
 ): Promise<RecordingRecord> {
@@ -63,7 +63,7 @@ export async function storeStaticResponse(
     sizeBytes: data.byteLength,
     durationMs: Math.round(input.durationMs),
     createdAt: Date.now(),
-    source: input.audio ? 'upload' : 'text',
+    source: input.audio ? (input.audioSource ?? 'upload') : 'text',
     selfTranscript: input.selfTranscript.trim() || undefined,
   };
   if (persist) {

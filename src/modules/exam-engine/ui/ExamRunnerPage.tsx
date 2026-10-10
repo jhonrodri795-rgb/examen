@@ -7,7 +7,7 @@ import { useBank, useMic, useToast } from '@/app/context';
 import { Alert, Badge, Button, ConfirmDialog, Dialog, EmptyState, ProgressBar, Spinner } from '@/components/ui';
 import { cn, formatClock, formatDuration } from '@/lib/format';
 import { MicSetupPanel, StaticMicNotice } from '@/modules/speaking/ui/MicPanel';
-import { DictationHelp } from '@/modules/speaking/ui/StaticSpeakingResponse';
+import { DictationCheck } from '@/modules/speaking/ui/DictationCheck';
 import { STATIC_BUILD } from '@/lib/runtime';
 import { sectionName } from '@/modules/scoring/results';
 import type { SectionId } from '@/modules/question-bank/types';
@@ -364,7 +364,7 @@ function SectionIntro({ attempt, apply }: { attempt: Attempt; apply: ReturnType<
         <div className="space-y-3 rounded-xl border border-line bg-surface p-5">
           <h2 className="text-sm font-semibold text-ink">Cómo responder en esta versión</h2>
           <StaticMicNotice />
-          <DictationHelp />
+          <DictationCheck />
         </div>
       )}
       <div className="flex flex-wrap gap-3">

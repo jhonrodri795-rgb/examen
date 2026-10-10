@@ -6,19 +6,24 @@ import { cn, formatClock } from '@/lib/format';
 import { LevelMeter, type MicState, type MicStatus } from '../microphone';
 import { Recorder, type RecordingResult } from '../recorder';
 import { STATIC_BUILD } from '@/lib/runtime';
+import { micPolicy } from '../dictation';
 
-/** Aviso para la versión publicada en claude.ai, donde el visor no concede el micrófono. */
+/** Aviso para la versión publicada en claude.ai: cómo se responde a Speaking allí. */
 export function StaticMicNotice() {
   if (!STATIC_BUILD) return null;
+  const blocked = micPolicy() === 'blocked';
   return (
-    <Alert tone="info" title="Speaking sin micrófono en la versión publicada">
-      <p>El visor de claude.ai no permite que una página publicada use el micrófono. Aquí puedes practicar igualmente:</p>
+    <Alert tone={blocked ? 'warn' : 'info'} title={blocked ? 'Esta página no puede grabar tu voz' : 'Speaking en la versión publicada'}>
+      {blocked ? (
+        <p>El visor de claude.ai no permite que las páginas publicadas usen el micrófono. Tu respuesta cuenta cuando tu voz se convierte en <strong>texto</strong> con el <strong>dictado de tu sistema</strong> (prueba abajo cómo activarlo) o cuando la escribes. No hace falta subir audio.</p>
+      ) : (
+        <p>Puedes intentar grabar con el micrófono de esta página; si el visor lo bloquea, responde con el <strong>dictado de tu sistema</strong> o escribiendo.</p>
+      )}
       <ul className="mt-1 list-disc pl-5">
-        <li>Responde en voz alta con el cronómetro y <strong>dicta</strong> tu respuesta con el dictado de tu teclado o sistema (o escríbela).</li>
-        <li>Opcional: grábate con otra app y <strong>sube el audio</strong> para medir pausas, tiempo de habla y ritmo en tu navegador.</li>
-        <li>Claude evalúa el contenido (lengua, desarrollo y cumplimiento de la tarea) con tu cuenta de claude.ai. La pronunciación no se puntúa.</li>
+        <li>Claude evalúa el contenido (uso de la lengua, desarrollo y cumplimiento de la tarea) con tu cuenta de claude.ai.</li>
+        <li>Opcional: sube un audio grabado con otra app para medir pausas y ritmo. La pronunciación no se puntúa.</li>
       </ul>
-      <p className="mt-1">Para grabar directamente con transcripción automática, ejecuta la aplicación en tu ordenador (<code>npm install</code> y <code>npm run dev</code>, ver README).</p>
+      <p className="mt-1">Para grabar con transcripción automática del audio, ejecuta la aplicación en tu ordenador (<code>npm install</code> y <code>npm run dev</code>, ver README).</p>
     </Alert>
   );
 }
