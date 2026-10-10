@@ -1,6 +1,6 @@
 import type { Transcript, TranscriptSegment, TranscriptWord } from '../../../shared/speaking-types.ts';
 import { httpProviderError, ProviderError, readErrorBody, type SttProvider } from './types.ts';
-import { AZURE_SHORT_AUDIO_MAX_SEC, callAzure, mapAzureResponse, type AzureResponse } from './pronunciation.ts';
+import { AZURE_SHORT_AUDIO_MAX_SEC, assessUnscripted, callAzure, mapAzureResponse, type AzureResponse } from './pronunciation.ts';
 import { parseWav } from '../validation.ts';
 
 const FILLERS = new Set(['um', 'uh', 'erm', 'er', 'hmm', 'mm', 'ah', 'eh', 'uhm', 'umm', 'uhh', 'mhm']);
@@ -172,7 +172,7 @@ export function createAzureStt(cfg: { key: string; region: string; withPronuncia
     name: 'azure',
     model: 'speech-to-text (audio corto)',
     dataPolicy: `El audio de la respuesta (WAV 16 kHz) se envía a Azure AI Speech (región ${cfg.region}) para transcribirlo${cfg.withPronunciation ? ' y puntuar pronunciación, fluidez y prosodia en la misma llamada' : ''}. El servidor local no lo almacena.`,
-    async transcribe(audio, mime, { signal }) {
+    async transcribe(audio, mime, { signal, pronunciation }) {
       const wav = parseWav(audio);
       if (!mime.includes('wav') || !wav || wav.sampleRate !== 16000 || wav.channels !== 1 || wav.bitsPerSample !== 16) {
         throw new ProviderError(415, 'wav_format', 'Azure requiere audio WAV PCM de 16 bits, mono, 16 kHz.');
@@ -180,10 +180,13 @@ export function createAzureStt(cfg: { key: string; region: string; withPronuncia
       if (wav.durationSec > AZURE_SHORT_AUDIO_MAX_SEC + 0.5) {
         throw new ProviderError(422, 'audio_too_long', `Azure (audio corto) admite hasta ${AZURE_SHORT_AUDIO_MAX_SEC} s por respuesta.`);
       }
-      // Sin guion (sin frase de referencia): la puntuación de pronunciación se omite si no está activada.
-      const json = await callAzure(cfg, audio, '', signal, fetchImpl);
-      const t = mapAzureTranscript(json);
-      return cfg.withPronunciation ? t : { ...t, pronunciation: undefined };
+      if (cfg.withPronunciation && pronunciation !== false) {
+        // Sin guion, en tramos de ≤ 30 s: transcripción con tiempos por palabra + pronunciación.
+        return mapAzureTranscript(await assessUnscripted(cfg, audio, signal, fetchImpl));
+      }
+      // Solo transcripción (sin evaluación, que se factura aparte): sin tiempos por palabra.
+      const t = mapAzureTranscript(await callAzure(cfg, audio, '', signal, fetchImpl, { assess: false }));
+      return { ...t, pronunciation: undefined };
     },
   };
 }

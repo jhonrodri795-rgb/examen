@@ -137,9 +137,35 @@ describe('evaluación de Speaking con transcripción propia', () => {
     expect(by.delivery!.score).toBe(3);
     expect(by.languageUse!.evaluable).toBe(false); // las citas no pueden verificarse sin texto
     expect(by.taskFulfillment!.evaluable).toBe(false);
-    expect(ev.overall).toBe(3);
+    expect(ev.overall).toBeNull(); // la fluidez sola no es una nota global
+    expect(ev.overall5).toBeNull();
     expect(ev.improvedResponse).toBeNull();
     expect(ev.limitations).toContain(AUDIO_ONLY_LIMITATION);
+  });
+
+  it('sin texto ignora puntuaciones de contenido aunque el modelo las respalde con métricas del audio', async () => {
+    const cheating = {
+      ...reply,
+      criteria: [
+        ...reply.criteria.filter((c) => c.criterion === 'delivery'),
+        { criterion: 'languageUse', evaluable: true, score: 4, rationale: 'x', evidence: [{ quote: 'speechRateSps = 3.4', source: 'audio-metrics' }] },
+        { criterion: 'taskFulfillment', evaluable: true, score: 4, rationale: 'x', evidence: [{ quote: 'pauseCount = 3', source: 'audio-metrics' }] },
+      ],
+      issues: [{ quote: 'x', problem: 'p', suggestion: 's', kind: 'grammar' }],
+    };
+    __resetSampleForTests(fakeSample(cheating));
+    const ev = await sampleEvaluateSpeaking({ ...input, transcript: { text: '', provider: 'none', lowConfidenceWords: [], source: 'none' }, durationSec: 40, acoustic: { pauseCount: 3 } });
+    const by = Object.fromEntries(ev.criteria.map((c) => [c.criterion, c]));
+    expect(by.languageUse!.score).toBeNull();
+    expect(by.taskFulfillment!.score).toBeNull();
+    expect(ev.issues).toEqual([]);
+  });
+
+  it('con texto, las métricas del audio no respaldan criterios de contenido', async () => {
+    const r2 = { ...reply, criteria: reply.criteria.map((c) => (c.criterion === 'topicDevelopment' ? { ...c, evidence: [{ quote: 'pauseCount = 1', source: 'audio-metrics' }] } : c)) };
+    __resetSampleForTests(fakeSample(r2));
+    const ev = await sampleEvaluateSpeaking({ ...input, acoustic: { pauseCount: 1 }, durationSec: 30 });
+    expect(ev.criteria.find((c) => c.criterion === 'topicDevelopment')!.evaluable).toBe(false);
   });
 
   it('sin texto ni audio no llama a Claude', async () => {

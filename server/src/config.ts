@@ -29,7 +29,13 @@ const num = (v: string | undefined, d: number) => {
   return Number.isFinite(n) && n > 0 ? n : d;
 };
 
-export function loadServerConfig(env: Record<string, string | undefined>): ServerConfig {
+export function loadServerConfig(raw: Record<string, string | undefined>): ServerConfig {
+  // Una variable vacía (p. ej. «STT_PROVIDER=» copiado de .env.example) cuenta como no definida.
+  const env: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    const t = v?.trim();
+    env[k] = t ? t : undefined;
+  }
   const azureReady = !!(env.AZURE_SPEECH_KEY && env.AZURE_SPEECH_REGION);
   const sttName = (env.STT_PROVIDER ?? (env.OPENAI_API_KEY ? 'openai' : env.DEEPGRAM_API_KEY ? 'deepgram' : azureReady ? 'azure' : 'none')).toLowerCase();
   let stt: ServerConfig['stt'] = { provider: null };

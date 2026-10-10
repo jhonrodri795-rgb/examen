@@ -77,8 +77,9 @@ async function staticCapabilities(): Promise<ServerCapabilities> {
   };
 }
 
-export function transcribe(audio: Blob, mimeType: string, durationMs: number): Promise<Transcript> {
-  return request<Transcript>(`/api/speaking/transcribe?durationMs=${Math.round(durationMs)}`, {
+/** `pronunciation: false`: no pedir la evaluación agrupada (Azure) porque se hará con guion aparte. */
+export function transcribe(audio: Blob, mimeType: string, durationMs: number, opts: { pronunciation?: boolean } = {}): Promise<Transcript> {
+  return request<Transcript>(`/api/speaking/transcribe?durationMs=${Math.round(durationMs)}${opts.pronunciation === false ? '&pronunciation=0' : ''}`, {
     method: 'POST',
     headers: { 'content-type': mimeType, ...CONSENT_HEADER },
     body: audio,

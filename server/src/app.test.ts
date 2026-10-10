@@ -4,7 +4,8 @@ import { createApp } from './app.ts';
 import { loadServerConfig } from './config.ts';
 import { parseWav, sniffContainer, validateAudio } from './validation.ts';
 import { mapDeepgramResponse, mapWhisperResponse, createOpenAiStt, createAzureStt, mapAzureTranscript } from './providers/stt.ts';
-import { azureAssessmentHeader, createAzurePronunciation, mapAzureResponse } from './providers/pronunciation.ts';
+import { assessUnscripted, azureAssessmentHeader, createAzurePronunciation, mapAzureResponse, splitWav } from './providers/pronunciation.ts';
+import { readFileSync } from 'node:fs';
 import { postProcessSpeaking, postProcessWriting, quoteIsVerbatim } from './providers/anthropic.ts';
 import { ProviderError, type Evaluator, type SttProvider } from './providers/types.ts';
 import type { Transcript } from '../../shared/speaking-types.ts';
@@ -231,6 +232,8 @@ describe('Azure AI Speech (respuestas simuladas según la API REST de audio cort
     expect(stt.dataPolicy).toMatch(/Azure AI Speech/);
     const noPron = await createAzureStt({ key: 'k', region: 'westeurope', withPronunciation: false }, fetchImpl).transcribe(wav(3), 'audio/wav', { signal });
     expect(noPron.pronunciation).toBeUndefined();
+    const lastHeaders = (fetchImpl as unknown as { mock: { calls: [unknown, RequestInit][] } }).mock.calls.at(-1)![1].headers as Record<string, string>;
+    expect(lastHeaders).not.toHaveProperty('Pronunciation-Assessment'); // no se paga una evaluación que se descarta
   });
 
   it('una sola clave de Azure activa transcripción y pronunciación; /api/capabilities no expone la clave', async () => {
@@ -241,6 +244,58 @@ describe('Azure AI Speech (respuestas simuladas según la API REST de audio cort
     const body = await res.text();
     expect(body).not.toContain('secret-azure-key');
     expect(JSON.parse(body).stt).toMatchObject({ configured: true, provider: 'azure' });
+  });
+
+  it('divide en tramos de ≤ 30 s (límite de la evaluación por REST) cortando en silencio', () => {
+    // 45 s de "voz" con un silencio en 24–25 s: el corte debe caer ahí.
+    const rate = 16000;
+    const pcm = new Int16Array(45 * rate).map((_, i) => (i >= 24 * rate && i < 25 * rate ? 0 : Math.round(8000 * Math.sin(i / 7))));
+    const src = new Uint8Array(44 + pcm.length * 2);
+    src.set(wav(45).subarray(0, 44));
+    new Int16Array(src.buffer, 44, pcm.length).set(pcm);
+    const parts = splitWav(src);
+    expect(parts).toHaveLength(2);
+    expect(parts[1]!.startSec).toBeGreaterThan(24);
+    expect(parts[1]!.startSec).toBeLessThan(25);
+    for (const p of parts) expect((p.wav.length - 44) / 2 / rate).toBeLessThanOrEqual(30.5);
+    expect(splitWav(wav(20))).toHaveLength(1);
+  });
+
+  it('combina los tramos: texto, tiempos desplazados y puntuaciones ponderadas', async () => {
+    const reply = (text: string, acc: number, durTicks: number) => ({
+      RecognitionStatus: 'Success', Offset: 0, Duration: durTicks,
+      NBest: [{ Confidence: 0.9, Display: text, Lexical: text.toLowerCase(), PronunciationAssessment: { AccuracyScore: acc, FluencyScore: acc, ProsodyScore: acc, PronScore: acc }, Words: [{ Word: 'w', Offset: 1_000_000, Duration: 2_000_000, PronunciationAssessment: { AccuracyScore: acc, ErrorType: 'None' } }] }],
+    });
+    const replies = [reply('First part.', 90, 300_000_000), reply('Second part.', 60, 100_000_000)];
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify(replies.shift()), { status: 200 })) as unknown as typeof fetch;
+    const merged = await assessUnscripted({ key: 'k', region: 'eastus' }, wav(45), new AbortController().signal, fetchImpl);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const best = merged.NBest![0]!;
+    expect(best.Display).toBe('First part. Second part.');
+    expect(best.PronunciationAssessment!.AccuracyScore).toBe(82.5); // (90·30 + 60·10) / 40
+    expect(best.Words![1]!.Offset).toBeGreaterThan(best.Words![0]!.Offset! + 150_000_000); // desplazado al inicio del 2.º tramo
+  });
+
+  it('la evaluación con guion rechaza audios de más de 30 s', async () => {
+    const fetchImpl = vi.fn() as unknown as typeof fetch;
+    await expect(createAzurePronunciation({ key: 'k', region: 'eastus' }, fetchImpl).assess(wav(40), 'Hello there.', { signal: new AbortController().signal })).rejects.toMatchObject({ code: 'audio_too_long' });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('copiar .env.example y rellenar solo la clave y la región de Azure activa Azure (variables vacías = no definidas)', () => {
+    const env: Record<string, string> = {};
+    for (const line of readFileSync(new URL('../../.env.example', import.meta.url), 'utf8').split(/\r?\n/)) {
+      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+      if (m) env[m[1]!] = m[2]!.trim();
+    }
+    env.AZURE_SPEECH_KEY = 'k';
+    env.AZURE_SPEECH_REGION = 'westeurope';
+    const cfg = loadServerConfig(env);
+    expect(cfg.stt.provider).toBe('azure');
+    expect(cfg.pronunciation.provider).toBe('azure');
+    const blank = loadServerConfig({ STT_PROVIDER: '', PRONUNCIATION_PROVIDER: ' ', EVALUATOR_PROVIDER: '', AZURE_SPEECH_KEY: 'k', AZURE_SPEECH_REGION: 'westeurope', ANTHROPIC_API_KEY: 'a' });
+    expect(blank.stt.provider).toBe('azure');
+    expect(blank.evaluator.provider).toBe('anthropic');
   });
 
   it('la pronunciación sin guion no envía frase de referencia', async () => {

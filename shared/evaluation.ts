@@ -28,6 +28,21 @@ export interface WritingEvalInput {
 
 const CRITERIA: Criterion[] = ['delivery', 'languageUse', 'topicDevelopment', 'taskFulfillment'];
 
+/**
+ * Cortes orientativos de fluidez (literatura sobre fluidez en L2; NO son
+ * conversiones a puntuaciones TOEFL). Una sola fuente para la interfaz, la
+ * evaluación heurística y las instrucciones del evaluador.
+ */
+export const FLUENCY_BANDS = {
+  /** Sílabas por segundo (incluidas las pausas). */
+  speechRate: { verySlow: 2, slow: 2.6, fluent: 3.2, veryFast: 5.5 },
+  /** Sílabas seguidas entre pausas. */
+  runSyllables: { halting: 4, long: 7 },
+  /** Rango de tono p10–p90 en semitonos. */
+  pitchRangeSt: { flat: 3, lively: 5 },
+} as const;
+const B = FLUENCY_BANDS;
+
 export const SpeakingSchema = z.object({
   criteria: z.array(
     z.object({
@@ -74,7 +89,7 @@ export type WritingRaw = z.infer<typeof WritingSchema>;
 export const SPEAKING_SYSTEM = `You are an experienced English speaking assessor helping a learner practice for the TOEFL iBT Speaking section (format in effect since January 2026: "Listen and Repeat" and "Take an Interview"). You evaluate ONE spoken response using a transparent rubric inspired by publicly described TOEFL speaking criteria. This is practice feedback, not an official ETS score, and you must never present it as one.
 
 Rubric (score each criterion from 0 to 4; half points allowed):
-- delivery: fluency, pace, pauses, rhythm and intonation. You cannot hear the audio. Base this criterion ONLY on the supplied metrics: "acoustic" (pause count, long pauses ≥ 1 s, pauses per minute, phonation ratio, leading silence), "acoustic.prosody" (syllable-based speechRateSps including pauses and articulationRateSps excluding pauses, meanRunSyllables between pauses, f0RangeSt and f0StdSt in semitones, intensityVarDb between syllables) and pronunciation-assessment scores if supplied. Orientative reference values from fluency research (NOT TOEFL score conversions): a speech rate below about 2 syllables/s or runs shorter than about 4 syllables suggest halting speech; about 3–4 syllables/s with runs of 8 or more syllables is good fluency for an advanced learner; native conversational speech is roughly 4–5 syllables/s; an F0 range (p10–p90) under about 3 semitones suggests flat, monotonous intonation, and 5 or more semitones suggests lively intonation. These are automatic, approximate estimates: if acoustic.prosody.reliability is "low", say the estimate is uncertain and score conservatively near the middle. If no acoustic metrics and no pronunciation-assessment data are supplied, set delivery to evaluable=false. If no pronunciation-assessment data is supplied, do not rate the pronunciation of individual sounds or words and state this in "limitations". A non-native accent is not an error: only comment on features that the data show reduce clarity.
+- delivery: fluency, pace, pauses, rhythm and intonation. You cannot hear the audio. Base this criterion ONLY on the supplied metrics: "acoustic" (pause count, long pauses ≥ 1 s, pauses per minute, phonation ratio, leading silence), "acoustic.prosody" (syllable-based speechRateSps including pauses and articulationRateSps excluding pauses, meanRunSyllables between pauses, f0RangeSt and f0StdSt in semitones, intensityVarDb between syllables) and pronunciation-assessment scores if supplied. Orientative reference values from fluency research (NOT TOEFL score conversions): a speech rate below about ${B.speechRate.verySlow} syllables/s or runs shorter than about ${B.runSyllables.halting} syllables suggest halting speech; ${B.speechRate.verySlow}–${B.speechRate.slow} syllables/s is slow; about ${B.speechRate.fluent} syllables/s or more with runs of about ${B.runSyllables.long} or more syllables is good fluency for an advanced learner; native conversational speech is roughly 4–5 syllables/s, and above about ${B.speechRate.veryFast} the estimate may be over-counting; an F0 range (p10–p90) under about ${B.pitchRangeSt.flat} semitones suggests flat, monotonous intonation, and ${B.pitchRangeSt.lively} or more semitones suggests lively intonation. These are automatic, approximate estimates. If acoustic.prosody.reliability is "low" (or acoustic.prosody is absent), do not use rate, run or pitch values to raise or lower the score: base delivery on the pause metrics (longPauseCount, pausesPerMinute, phonationRatio) and pronunciation-assessment data, say in "limitations" that rhythm and intonation could not be estimated reliably, and never default to a middle score; if the remaining metrics are not enough to judge, set delivery evaluable=false. If no acoustic metrics and no pronunciation-assessment data are supplied, set delivery to evaluable=false. If no pronunciation-assessment data is supplied, do not rate the pronunciation of individual sounds or words and state this in "limitations". A non-native accent is not an error: only comment on features that the data show reduce clarity.
 - languageUse: grammatical accuracy and the range and precision of vocabulary, based on the transcript.
 - topicDevelopment: coherence, organization, development of ideas, relevance and use of examples.
 - taskFulfillment: whether the response actually answers the question (interview) or reproduces the reference sentence (listen-repeat).
@@ -138,11 +153,17 @@ export const SELF_TRANSCRIPT_LIMITATION = 'La transcripción la escribiste o dic
 export function postProcessSpeaking(raw: SpeakingRaw, input: SpeakingEvalInput, meta: EvaluatorMeta): SpeakingEvaluation {
   let dropped = 0;
   const hasDeliveryData = !!input.acoustic || !!input.pronunciation;
+  const noText = input.transcript.source === 'none' || normalize(input.transcript.text).length === 0;
   const criteria: CriterionAssessment[] = CRITERIA.map((name) => {
     const c = raw.criteria.find((x) => x.criterion === name);
     if (!c) return { criterion: name, evaluable: false, score: null, rationale: 'El evaluador no devolvió este criterio.', evidence: [] };
+    // Sin texto solo se puede evaluar la fluidez: el resto no se puntúa, diga lo que diga el modelo.
+    if (noText && name !== 'delivery') {
+      return { criterion: name, evaluable: false, score: null, rationale: 'No hay texto de la respuesta: este criterio no se puede evaluar solo con el audio. Dicta o escribe lo que dijiste.', evidence: [] };
+    }
     const evidence = c.evidence.filter((e) => {
-      const ok = e.source === 'audio-metrics' ? hasDeliveryData : quoteIsVerbatim(e.quote, input.transcript.text);
+      // Las métricas del audio solo respaldan la fluidez, nunca gramática ni contenido.
+      const ok = e.source === 'audio-metrics' ? name === 'delivery' && hasDeliveryData : quoteIsVerbatim(e.quote, input.transcript.text);
       if (!ok) dropped++;
       return ok;
     });
@@ -164,7 +185,8 @@ export function postProcessSpeaking(raw: SpeakingRaw, input: SpeakingEvalInput, 
     return ok;
   });
   const scored = criteria.filter((c) => c.score !== null);
-  const overall = scored.length ? half(scored.reduce((s, c) => s + (c.score ?? 0), 0) / scored.length) : null;
+  // Sin texto no hay nota global: la fluidez sola no representa la respuesta completa.
+  const overall = scored.length && !noText ? half(scored.reduce((s, c) => s + (c.score ?? 0), 0) / scored.length) : null;
   const limitations = [...raw.limitations];
   if (input.transcript.source === 'self') limitations.push(SELF_TRANSCRIPT_LIMITATION);
   if (input.transcript.source === 'none') limitations.push(AUDIO_ONLY_LIMITATION);
@@ -178,8 +200,8 @@ export function postProcessSpeaking(raw: SpeakingRaw, input: SpeakingEvalInput, 
     overall5: overall === null ? null : half((overall / 4) * 5),
     criteria,
     strengths: raw.strengths,
-    issues,
-    improvedResponse: input.task.type === 'listen-repeat' || input.transcript.source === 'none' ? null : raw.improvedResponse,
+    issues: noText ? [] : issues,
+    improvedResponse: input.task.type === 'listen-repeat' || noText ? null : raw.improvedResponse,
     exercises: raw.exercises,
     pronunciationAdvice: raw.pronunciationAdvice,
     limitations,

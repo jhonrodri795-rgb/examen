@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, Bot, Calculator, Download, FileJson, Gauge, Loader2, Pencil, RotateCcw, Trash2, Wand2 } from 'lucide-react';
 import type { Criterion, PronunciationAssessment, ProsodyMetrics, SpeakingEvaluation } from '@shared/speaking-types';
+import { FLUENCY_BANDS } from '@shared/evaluation';
 import { useCapabilities, useConsent, useSettings, useToast } from '@/app/context';
 import { Alert, Badge, Button, Card, CardHeader, ConfirmDialog } from '@/components/ui';
 import { downloadBlob, downloadText } from '@/lib/api';
@@ -79,25 +80,30 @@ function band(v: number | null, bands: [number, string, Tone][], top: [string, T
 }
 
 /** Fluidez y prosodia estimadas en la señal, con bandas orientativas (no son puntuaciones TOEFL). */
-export function FluencyPanel({ p }: { p: ProsodyMetrics }) {
+export function FluencyPanel({ p, taskType }: { p: ProsodyMetrics; taskType?: SpeakingTaskInfo['type'] }) {
+  const unreliable = p.reliability === 'low';
+  const sr = FLUENCY_BANDS.speechRate;
+  const rs = FLUENCY_BANDS.runSyllables;
+  const pr = FLUENCY_BANDS.pitchRangeSt;
   const items: { label: string; value: string; hint: string; band: [string, Tone] | null }[] = [
     {
       label: 'Velocidad de habla',
       value: p.speechRateSps != null ? `${p.speechRateSps} síl/s` : '—',
       hint: 'Sílabas por segundo incluyendo pausas. Nativo conversacional ≈ 4–5.',
-      band: band(p.speechRateSps, [[2, 'Muy lenta', 'bad'], [2.6, 'Lenta', 'warn'], [3.2, 'Moderada', 'neutral'], [5.5, 'Fluida', 'ok']], ['Muy rápida', 'warn']),
+      band: band(p.speechRateSps, [[sr.verySlow, 'Muy lenta', 'bad'], [sr.slow, 'Lenta', 'warn'], [sr.fluent, 'Moderada', 'neutral'], [sr.veryFast, 'Fluida', 'ok']], ['Muy rápida', 'warn']),
     },
     {
       label: 'Tramos entre pausas',
       value: p.meanRunSyllables != null ? `${p.meanRunSyllables} sílabas` : '—',
-      hint: 'Sílabas seguidas sin pausa (media). Más largo = discurso más fluido.',
-      band: band(p.meanRunSyllables, [[4, 'Entrecortado', 'bad'], [7, 'Tramos cortos', 'warn']], ['Tramos largos', 'ok']),
+      hint: taskType === 'listen-repeat' ? 'En Listen and Repeat el tramo está limitado por la longitud de la frase.' : 'Sílabas seguidas sin pausa (media). Más largo = discurso más fluido.',
+      // En Listen and Repeat la frase misma limita el tramo: no se valora.
+      band: taskType === 'listen-repeat' ? null : band(p.meanRunSyllables, [[rs.halting, 'Entrecortado', 'bad'], [rs.long, 'Tramos cortos', 'warn']], ['Tramos largos', 'ok']),
     },
     {
       label: 'Variación de tono',
       value: p.f0RangeSt != null ? `${p.f0RangeSt} semitonos` : '—',
       hint: 'Rango de entonación (percentiles 10–90). Poco rango suena monótono.',
-      band: band(p.f0RangeSt, [[3, 'Monótona', 'warn'], [5, 'Moderada', 'neutral']], ['Variada', 'ok']),
+      band: band(p.f0RangeSt, [[pr.flat, 'Monótona', 'warn'], [pr.lively, 'Moderada', 'neutral']], ['Variada', 'ok']),
     },
     {
       label: 'Velocidad de articulación',
@@ -111,30 +117,36 @@ export function FluencyPanel({ p }: { p: ProsodyMetrics }) {
       <p className="flex items-center gap-2 text-sm font-semibold text-ink">
         <Gauge className="h-4 w-4 text-accent" aria-hidden /> Fluidez y prosodia (estimación)
       </p>
+      {unreliable && (
+        <Alert tone="info">Hay poca voz o poco contraste en el audio para estimar el ritmo y el tono con fiabilidad: las cifras son solo orientativas y no se usan para puntuar.</Alert>
+      )}
       <dl className="grid grid-cols-2 gap-2">
         {items.map((it) => (
           <div key={it.label} className="rounded-lg bg-surface-3 p-2" title={it.hint}>
             <dt className="text-xs text-muted">{it.label}</dt>
             <dd className="flex flex-wrap items-center gap-1.5 font-semibold tabular-nums text-ink">
               {it.value}
-              {it.band && <Badge tone={it.band[1]}>{it.band[0]}</Badge>}
+              {it.band && <Badge tone={unreliable ? 'neutral' : it.band[1]}>{it.band[0]}{unreliable ? ' (poco fiable)' : ''}</Badge>}
             </dd>
             <dd className="mt-0.5 text-[11px] leading-snug text-muted">{it.hint}</dd>
           </div>
         ))}
       </dl>
       <p className="text-xs text-muted">
-        {p.syllableCount} sílabas detectadas{p.f0MedianHz ? ` · tono medio ${p.f0MedianHz} Hz` : ''}. Estimaciones automáticas por picos de intensidad y tono (aproximadas, ±10–15 %); las bandas son orientativas y no equivalen a puntuaciones oficiales.
-        {p.reliability === 'low' && ' Hay poca voz para estimarlas con fiabilidad.'}
+        {p.syllableCount} sílabas detectadas{p.f0MedianHz ? ` · tono medio ${p.f0MedianHz} Hz` : ''}. Estimaciones automáticas por picos de intensidad y tono: aproximadas (contrastadas solo con voz sintética); con eco, ruido o habla muy rápida pueden desviarse más. Las bandas son orientativas y no equivalen a puntuaciones oficiales.
       </p>
     </div>
   );
 }
 
+const PRON_ERRORS = new Set(['Mispronunciation', 'Omission', 'Insertion']);
+
 /** Puntuaciones del servicio fonético y palabras con baja precisión. */
 function PronunciationPanel({ p }: { p: PronunciationAssessment }) {
   const scripted = !!p.referenceText.trim();
-  const weak = p.words.filter((w) => (w.accuracy != null && w.accuracy < 60) || (w.errorType && w.errorType !== 'None')).slice(0, 15);
+  // Solo errores de pronunciación; los de prosodia (Monotone, pausas) no son palabras mal pronunciadas.
+  const weak = p.words.filter((w) => (w.accuracy != null && w.accuracy < 60) || PRON_ERRORS.has(w.errorType)).slice(0, 15);
+  const monotone = p.words.some((w) => w.errorType === 'Monotone');
   const scores: [string, number | null][] = [
     ['Pronunciación', p.pronunciation],
     ['Precisión', p.accuracy],
@@ -166,6 +178,7 @@ function PronunciationPanel({ p }: { p: PronunciationAssessment }) {
           </p>
         </div>
       )}
+      {monotone && <p className="text-xs text-ink-2">El servicio detectó entonación plana en parte de la respuesta (estimación del servicio).</p>}
       <p className="text-xs text-muted">Puntuaciones del servicio externo (0–100), no de ETS. Un acento no nativo no es un error: fíjate en las palabras con puntuación baja de forma repetida.</p>
     </div>
   );
@@ -195,7 +208,7 @@ function reportToMarkdown(task: SpeakingTaskInfo, r: SpeakingReportRecord): stri
   if (r.repeatAccuracy) lines.push('', `## Precisión de la repetición: ${Math.round(r.repeatAccuracy.accuracy * 100)} %`);
   if (r.pronunciation) lines.push('', `## Evaluación fonética (${r.pronunciation.provider})`, `Pronunciación ${r.pronunciation.pronunciation ?? '—'} · Precisión ${r.pronunciation.accuracy ?? '—'} · Fluidez ${r.pronunciation.fluency ?? '—'} · Prosodia ${r.pronunciation.prosody ?? '—'} (0–100)`);
   if (ev) {
-    lines.push('', `## Evaluación (${ev.mode === 'ai' ? `IA: ${ev.provider} · ${ev.model}` : 'heurística local'})`, `Global: ${ev.overall ?? '—'}/4`);
+    lines.push('', `## Evaluación (${ev.mode === 'ai' ? `IA: ${ev.provider} · ${ev.model}` : 'heurística local'})`, ev.overall != null ? `Global: ${ev.overall}/4` : `Solo fluidez: ${ev.criteria.find((c) => c.criterion === 'delivery')?.score ?? '—'}/4 (sin texto no hay nota global)`);
     for (const c of ev.criteria) lines.push(`- **${CRITERION_LABEL[c.criterion]}**: ${c.score ?? 'no evaluable'}${c.score != null ? '/4' : ''} — ${c.rationale}${c.evidence.length ? ` (evidencia: ${c.evidence.map((e) => `«${e.quote}»`).join('; ')})` : ''}`);
     if (ev.strengths.length) lines.push('', '### Aspectos positivos', ...ev.strengths.map((s) => `- ${s}`));
     if (ev.issues.length) lines.push('', '### Fragmentos a revisar', ...ev.issues.map((i) => `- «${i.quote}»: ${i.problem} → ${i.suggestion}`));
@@ -347,7 +360,7 @@ export function SpeakingReportView({
         <>
           {a?.prosody && (
             <Card className="p-5">
-              <FluencyPanel p={a.prosody} />
+              <FluencyPanel p={a.prosody} taskType={task.type} />
             </Card>
           )}
           <div className="grid gap-5 lg:grid-cols-2">
@@ -482,7 +495,13 @@ export function SpeakingReportView({
               actions={
                 ev && (
                   <>
-                    <Badge tone="brand">Global {ev.overall ?? '—'}/4</Badge>
+                    {ev.overall != null ? (
+                      <Badge tone="brand">Global {ev.overall}/4</Badge>
+                    ) : ev.criteria.find((c) => c.criterion === 'delivery')?.score != null ? (
+                      <Badge tone="accent">Solo fluidez: {ev.criteria.find((c) => c.criterion === 'delivery')!.score}/4</Badge>
+                    ) : (
+                      <Badge>Sin nota global</Badge>
+                    )}
                     {onRated && ev.overall5 != null && (
                       <Button size="sm" variant="outline" onClick={() => onRated({ source: ev.mode === 'ai' ? 'ai' : 'auto', overall: ev.overall5!, criteria: Object.fromEntries(ev.criteria.map((c) => [c.criterion, c.score])), at: Date.now(), reportId: report.id })}>
                         Usar como valoración

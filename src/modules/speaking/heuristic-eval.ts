@@ -6,6 +6,7 @@
  * Nunca puntúa la pronunciación: no hay datos fonéticos para hacerlo.
  */
 import type { AcousticMetrics, CriterionAssessment, PronunciationAssessment, SpeakingEvaluation, Transcript, TranscriptMetrics } from '@shared/speaking-types';
+import { FLUENCY_BANDS } from '@shared/evaluation';
 import { grammarFlags, tokenize } from '../writing/analysis';
 import type { AlignmentOp } from './transcript-analysis';
 
@@ -29,6 +30,7 @@ export function heuristicEvaluation(input: HeuristicInput): SpeakingEvaluation {
   const criteria: CriterionAssessment[] = [];
   const strengths: string[] = [];
   const issues: SpeakingEvaluation['issues'] = [];
+  let lowPitchRange: number | null = null;
   const exercises: string[] = [];
   const limitations: string[] = [
     'Evaluación heurística basada en reglas transparentes; no es una puntuación oficial ni sustituye a un evaluador humano.',
@@ -55,21 +57,25 @@ export function heuristicEvaluation(input: HeuristicInput): SpeakingEvaluation {
     if (p && m?.wordsPerMinute == null && p.speechRateSps != null) {
       // Sin transcripción: ritmo estimado en sílabas por segundo (aproximado).
       ev.push({ quote: `prosody.speechRateSps = ${p.speechRateSps}; meanRunSyllables = ${p.meanRunSyllables ?? '—'}`, source: 'audio-metrics' });
-      if (p.speechRateSps < 2) s -= 1.5;
-      else if (p.speechRateSps < 2.6) s -= 1;
-      else if (p.speechRateSps < 3.1) s -= 0.5;
-      else strengths.push(`Ritmo de habla fluido (${p.speechRateSps} sílabas por segundo, estimado).`);
+      const sr = FLUENCY_BANDS.speechRate;
+      if (p.speechRateSps < sr.verySlow) s -= 1.5;
+      else if (p.speechRateSps < sr.slow) s -= 1;
+      else if (p.speechRateSps < sr.fluent) s -= 0.5;
+      else if (p.speechRateSps >= sr.veryFast) {
+        s -= 0.5;
+        limitations.push(`Ritmo estimado muy alto (${p.speechRateSps} sílabas/s): puede deberse a un recuento excesivo o a hablar demasiado rápido.`);
+      } else strengths.push(`Ritmo de habla fluido (${p.speechRateSps} sílabas por segundo, estimado).`);
     }
-    if (p?.meanRunSyllables != null && p.meanRunSyllables < 4) {
+    if (p?.meanRunSyllables != null && p.meanRunSyllables < FLUENCY_BANDS.runSyllables.halting && !isRepeat) {
       s -= 0.5;
       exercises.push('Encadena más palabras entre pausas: practica frases completas de 8–10 sílabas sin detenerte (shadowing con audios en inglés).');
     }
     if (p?.f0RangeSt != null) {
       ev.push({ quote: `prosody.f0RangeSt = ${p.f0RangeSt}`, source: 'audio-metrics' });
-      if (p.f0RangeSt < 3) {
+      if (p.f0RangeSt < FLUENCY_BANDS.pitchRangeSt.flat) {
         s -= 0.5;
-        issues.push({ quote: `f0RangeSt = ${p.f0RangeSt}`, problem: 'Poca variación de tono: la entonación puede sonar plana o monótona.', suggestion: 'Marca las palabras clave subiendo el tono y baja al final de cada idea.', kind: 'fluency' });
-      } else if (p.f0RangeSt >= 5) strengths.push('Entonación variada (buen rango de tono).');
+        lowPitchRange = p.f0RangeSt;
+      } else if (p.f0RangeSt >= FLUENCY_BANDS.pitchRangeSt.lively) strengths.push('Entonación variada (buen rango de tono, estimado).');
     }
     if (m?.wordsPerMinute != null) {
       ev.push({ quote: `wordsPerMinute = ${m.wordsPerMinute}`, source: 'audio-metrics' });
@@ -203,6 +209,9 @@ export function heuristicEvaluation(input: HeuristicInput): SpeakingEvaluation {
   }
 
   const pronunciationAdvice: string[] = [];
+  if (lowPitchRange !== null) {
+    pronunciationAdvice.push(`Entonación: variación de tono estimada de ${String(lowPitchRange).replace('.', ',')} semitonos (aproximado; poca variación puede sonar monótona). Marca las palabras clave subiendo el tono y baja al final de cada idea.`);
+  }
   if (input.pronunciation) {
     for (const w of input.pronunciation.words.filter((x) => x.accuracy != null && x.accuracy < 60).slice(0, 6)) {
       pronunciationAdvice.push(`"${w.word}": precisión ${w.accuracy}/100${w.errorType !== 'None' ? ` (${w.errorType})` : ''}. Escucha un modelo y repítela despacio.`);
@@ -215,7 +224,8 @@ export function heuristicEvaluation(input: HeuristicInput): SpeakingEvaluation {
   if (a?.quality.noisy) limitations.push('Hay bastante ruido de fondo; las pausas detectadas pueden ser menos precisas.');
 
   const scored = criteria.filter((c) => c.score !== null);
-  const overall = scored.length ? half(scored.reduce((s, c) => s + (c.score ?? 0), 0) / scored.length) : null;
+  // Sin transcripción solo hay fluidez: no se presenta como nota global de la respuesta.
+  const overall = scored.length && t ? half(scored.reduce((s, c) => s + (c.score ?? 0), 0) / scored.length) : null;
   return {
     provider: 'local',
     model: 'heuristic-v1',

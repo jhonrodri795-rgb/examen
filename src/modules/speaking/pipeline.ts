@@ -34,6 +34,14 @@ export interface PipelineContext {
 
 const msg = (e: unknown) => (e instanceof ApiRequestError ? e.message : (e as Error)?.message ?? String(e));
 
+/** Métricas para el evaluador: sin segmentos y, si la prosodia es poco fiable, sin sus cifras (no deben pesar). */
+function evaluatorAcoustic(a: NonNullable<SpeakingReportRecord['acoustic']>): Record<string, unknown> {
+  const { runs: _runs, prosody, ...rest } = a;
+  void _runs;
+  if (!prosody) return rest;
+  return { ...rest, prosody: prosody.reliability === 'ok' ? prosody : { reliability: 'low', syllableCount: prosody.syllableCount } };
+}
+
 export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): Promise<SpeakingReportRecord> {
   const now = Date.now();
   const report: SpeakingReportRecord = ctx.existing
@@ -80,6 +88,7 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
   const services = [wantStt && 'stt', wantPron && 'pronunciation', wantEval && 'evaluator'].filter(Boolean) as ('stt' | 'pronunciation' | 'evaluator')[];
   const consented = services.length ? await ctx.consent(services) : false;
 
+  let sttError: unknown = null;
   // 2. Transcripción (o la respuesta escrita/dictada por el estudiante)
   if (selfTranscript) {
     report.transcript = selfTranscript;
@@ -92,7 +101,7 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
       // Azure (audio corto) requiere WAV PCM 16 kHz mono: se convierte en el navegador.
       if (ctx.caps?.stt.provider === 'azure') {
         const wav = await toWav16kMono(rec.data);
-        report.transcript = await transcribe(new Blob([wav], { type: 'audio/wav' }), 'audio/wav', rec.durationMs);
+        report.transcript = await transcribe(new Blob([wav], { type: 'audio/wav' }), 'audio/wav', rec.durationMs, { pronunciation: !scripted });
       } else {
         report.transcript = await transcribe(new Blob([rec.data], { type: rec.mimeType }), rec.mimeType, rec.durationMs);
       }
@@ -101,6 +110,7 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
       report.transcriptError = undefined;
     } catch (e) {
       report.transcriptError = msg(e);
+      sttError = e;
     }
   } else if (!wantStt) {
     report.transcriptError = STATIC_BUILD
@@ -120,7 +130,10 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
   }
 
   // 4. Pronunciación (con guion en Listen and Repeat; sin guion en respuestas libres)
-  if (wantPron && consented && !report.pronunciation) {
+  // Si la llamada combinada de Azure ya falló por el audio (sin voz, demasiado largo…), no se repite.
+  const combinedAzureFailed =
+    !scripted && ctx.caps?.stt.provider === 'azure' && sttError instanceof ApiRequestError && sttError.status >= 400 && sttError.status < 500;
+  if (wantPron && consented && !report.pronunciation && !combinedAzureFailed) {
     ctx.onStep?.('pronunciation');
     try {
       const wav = await toWav16kMono(rec.data);
@@ -148,7 +161,7 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
             }
           : { text: '', provider: 'none', lowConfidenceWords: [], source: 'none' },
         durationSec: audio ? Math.max(0.1, rec.durationMs / 1000) : null,
-        acoustic: report.acoustic ? { ...report.acoustic, runs: undefined } : null,
+        acoustic: report.acoustic ? evaluatorAcoustic(report.acoustic) : null,
         transcriptMetrics: report.transcriptMetrics ? { ...report.transcriptMetrics } : null,
         pronunciation: report.pronunciation ? { ...report.pronunciation } : null,
       });

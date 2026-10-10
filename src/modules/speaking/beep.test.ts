@@ -57,6 +57,37 @@ describe('detección de los pitidos de la página en una grabación externa', ()
     expect(w.end).toBeCloseTo(x.length / SR, 1);
   });
 
+  it('no confunde con un pitido el armónico de una voz aguda que coincide con 660/880 Hz', () => {
+    // Voz de F0 ≈ 220 Hz con el 3.er armónico (660 Hz) y el 4.º (880 Hz) reforzados por un formante.
+    const vowel = (f0: number, sec: number, amps: number[]) => {
+      let ph = 0;
+      return Float32Array.from({ length: Math.round(sec * SR) }, (_, i) => {
+        const f = f0 * (1 + 0.005 * Math.sin((2 * Math.PI * 5 * i) / SR));
+        ph += (2 * Math.PI * f) / SR;
+        return 0.08 * amps.reduce((acc, a, k) => acc + a * Math.sin((k + 1) * ph), 0);
+      });
+    };
+    // Vocales con un armónico muy dominante (formante encima): 3.º = 660 Hz y 4.º = 880 Hz.
+    const x = concat(vowel(220, 0.5, [0.3, 0.2, 1, 0.3, 0.1]), noise(0.1), vowel(220, 0.5, [0.3, 0.2, 0.3, 1, 0.1]));
+    expect(findTones(x, SR, END_BEEP_HZ)).toHaveLength(0);
+    expect(findTones(x, SR, START_BEEP_HZ)).toHaveLength(0);
+  });
+
+  it('sin pitido de fin limita el tramo al tiempo de respuesta', () => {
+    // pitido de inicio → 4 s de respuesta → 20 s de ruido (no se pulsó «Terminar» y la grabadora siguió)
+    const x = concat(speechLike(2), tone(START_BEEP_HZ, 0.16), speechLike(4), noise(20));
+    const w = responseWindow(x, SR, 10)!;
+    expect(w.endBeep).toBe(false);
+    expect(w.end).toBeCloseTo(w.start + 10.5, 1);
+  });
+
+  it('ignora un tono de 660 Hz posterior al tiempo de respuesta', () => {
+    const x = concat(tone(START_BEEP_HZ, 0.16), speechLike(5), noise(10), tone(END_BEEP_HZ, 0.16), noise(1));
+    const w = responseWindow(x, SR, 8)!;
+    expect(w.endBeep).toBe(false);
+    expect(w.end).toBeLessThan(9);
+  });
+
   it('sin pitido no recorta', () => {
     expect(responseWindow(speechLike(5), SR)).toBeNull();
   });

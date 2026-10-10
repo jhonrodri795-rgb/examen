@@ -115,7 +115,7 @@ export function looksSpanish(text: string): boolean {
 /** Grabadora de voz integrada en cada sistema (para medir la fluidez sin el micrófono de la página). */
 export const RECORDER_GUIDES: Record<Platform, string> = {
   windows: 'app «Grabadora de sonido» (tecla Windows → escribe «Grabadora»). Guarda en Documentos → Grabaciones de sonido.',
-  mac: 'app «Notas de voz» (o QuickTime Player → Archivo → Nueva grabación de audio).',
+  mac: 'QuickTime Player → Archivo → Nueva grabación de audio; al terminar, Archivo → Guardar. O «Notas de voz»: arrastra la grabación de la lista hasta esta página.',
   ios: 'app «Notas de voz». Para subirla: Compartir → Guardar en Archivos.',
   android: 'app «Grabadora» del móvil.',
   chromeos: 'app «Grabadora» de ChromeOS.',

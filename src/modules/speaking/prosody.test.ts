@@ -50,6 +50,13 @@ describe('tono (F0) por autocorrelación', () => {
       expect(Math.abs(est - f) / f).toBeLessThan(0.03);
     }
   });
+  it('voces agudas cerca de 400 Hz no se reducen a la mitad, y por encima se descartan', () => {
+    const tone = (f: number) => Float32Array.from({ length: 4000 }, (_, i) => Math.sin((2 * Math.PI * f * i) / 8000) + 0.4 * Math.sin((4 * Math.PI * f * i) / 8000));
+    for (const f of [380, 392, 396, 399]) expect(Math.abs(framePitch(tone(f), 1000, 320, 8000)! - f) / f).toBeLessThan(0.03);
+    expect(framePitch(tone(450), 1000, 320, 8000)).toBeNull();
+    expect(framePitch(tone(520), 1000, 320, 8000)).toBeNull();
+  });
+
   it('no da tono en ruido', () => {
     const x = Float32Array.from({ length: 4000 }, () => Math.random() - 0.5);
     expect(framePitch(x, 1000, 320, 8000)).toBeNull();
@@ -95,6 +102,19 @@ describe('prosodia: variación de tono', () => {
     const varied = analyzeSamples(syllables({ perSecond: 4, seconds: 8, f0: (t) => 150 * 2 ** ((5 * Math.sin(2 * Math.PI * 0.4 * t)) / 12) }), SR).prosody!;
     expect(flat.f0RangeSt!).toBeLessThan(1.5);
     expect(varied.f0RangeSt!).toBeGreaterThan(6);
+  });
+
+  it('una voz aguda y monótona (≈375 Hz) no aparece como entonación variada', () => {
+    const p = analyzeSamples(syllables({ perSecond: 4, seconds: 8, f0: (t) => 375 * 2 ** ((0.5 * Math.sin(2 * Math.PI * 0.5 * t)) / 12) }), SR).prosody!;
+    expect(p.f0MedianHz!).toBeGreaterThan(355);
+    expect(p.f0MedianHz!).toBeLessThan(395);
+    expect(p.f0RangeSt!).toBeLessThan(3);
+  });
+
+  it('cuenta las sílabas aunque el audio no tenga silencio alrededor', () => {
+    const p = analyzeSamples(syllables({ perSecond: 4, seconds: 10, f0: () => 150 }), SR).prosody!;
+    expect(p.syllableCount).toBeGreaterThanOrEqual(36);
+    expect(p.syllableCount).toBeLessThanOrEqual(44);
   });
 
   it('marca baja fiabilidad con muy poca voz', () => {

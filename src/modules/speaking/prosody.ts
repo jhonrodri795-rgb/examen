@@ -55,51 +55,61 @@ export function downsample(samples: Float32Array, sampleRate: number, target = T
   return out;
 }
 
-/** F0 de una trama por autocorrelación normalizada (null si no es sonora). */
+const scratch = new Map<number, { buf: Float64Array; pre: Float64Array; r: Float64Array }>();
+
+/**
+ * F0 de una trama por autocorrelación normalizada (null si no es sonora o
+ * está fuera de 75–400 Hz). Se buscan también retardos algo menores que el
+ * del límite superior para no tomar la mitad de una voz muy aguda (error de
+ * octava) y rechazarla en su lugar.
+ */
 export function framePitch(x: Float32Array, start: number, n: number, rate: number): number | null {
   if (start + n > x.length) return null;
+  const minLagHz = rate / MAX_F0;
+  const lowLag = Math.max(2, Math.floor(rate / (MAX_F0 * 1.6)));
+  const maxLag = Math.min(n - 2, Math.ceil(rate / MIN_F0));
+  let sc = scratch.get(n);
+  if (!sc) {
+    sc = { buf: new Float64Array(n), pre: new Float64Array(n + 1), r: new Float64Array(n + 2) };
+    scratch.set(n, sc);
+  }
+  const { buf, pre, r } = sc;
   let mean = 0;
   for (let i = 0; i < n; i++) mean += x[start + i]!;
   mean /= n;
-  const buf = new Float64Array(n);
-  let energy = 0;
+  pre[0] = 0;
   for (let i = 0; i < n; i++) {
-    buf[i] = x[start + i]! - mean;
-    energy += buf[i]! * buf[i]!;
+    const v = x[start + i]! - mean;
+    buf[i] = v;
+    pre[i + 1] = pre[i]! + v * v;
   }
-  if (energy < 1e-8) return null;
-  const minLag = Math.floor(rate / MAX_F0);
-  const maxLag = Math.min(n - 2, Math.ceil(rate / MIN_F0));
-  const r = new Float64Array(maxLag + 2);
+  if (pre[n]! < 1e-8) return null;
   let best = -1;
-  for (let lag = minLag; lag <= maxLag + 1; lag++) {
+  for (let lag = lowLag; lag <= maxLag + 1; lag++) {
     let num = 0;
-    let e1 = 0;
-    let e2 = 0;
-    for (let i = 0; i + lag < n; i++) {
-      num += buf[i]! * buf[i + lag]!;
-      e1 += buf[i]! * buf[i]!;
-      e2 += buf[i + lag]! * buf[i + lag]!;
-    }
+    for (let i = 0; i + lag < n; i++) num += buf[i]! * buf[i + lag]!;
+    const e1 = pre[n - lag]!;
+    const e2 = pre[n]! - pre[lag]!;
     r[lag] = e1 > 0 && e2 > 0 ? num / Math.sqrt(e1 * e2) : 0;
     if (lag <= maxLag && r[lag]! > best) best = r[lag]!;
   }
   if (best < CLARITY) return null;
   // El primer máximo local cercano al mejor evita errores de octava hacia abajo.
   let lag = -1;
-  for (let l = minLag + 1; l <= maxLag; l++) {
+  for (let l = lowLag + 1; l <= maxLag; l++) {
     if (r[l]! >= 0.9 * best && r[l]! >= r[l - 1]! && r[l]! >= r[l + 1]!) {
       lag = l;
       break;
     }
   }
-  if (lag < 0) return null;
+  if (lag < 0 || lag < minLagHz - 0.5) return null; // más agudo que 400 Hz: fuera de rango
   const a = r[lag - 1]!;
   const b = r[lag]!;
   const c = r[lag + 1]!;
   const denom = a - 2 * b + c;
   const shift = denom !== 0 ? Math.max(-0.5, Math.min(0.5, (0.5 * (a - c)) / denom)) : 0;
-  return rate / (lag + shift);
+  const f = rate / (lag + shift);
+  return f > MAX_F0 * 1.03 ? null : f;
 }
 
 const quantile = (sorted: number[], q: number) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1))))]! : NaN);
@@ -142,8 +152,13 @@ export function analyzeProsody(samples: Float32Array, sampleRate: number, runs: 
   // Núcleos silábicos: picos de intensidad sonoros con caída mínima entre ellos.
   const allDb = Array.from(sm).sort((a, b) => a - b);
   const q99 = quantile(allDb, 0.99);
-  const noise = quantile(allDb, 0.1);
-  const threshold = Math.max(q99 - PEAK_REL_DB, noise + 6);
+  // Ruido estimado fuera de los segmentos de voz (si hay suficientes tramas de silencio).
+  const quiet = Array.from(sm).filter((_, i) => !speech[i]).sort((a, b) => a - b);
+  const noise = quiet.length >= 10 ? quantile(quiet, 0.5) : quantile(allDb, 0.1);
+  const threshold = Math.max(q99 - PEAK_REL_DB, Math.min(noise + 6, q99 - 15));
+  // Poco contraste de intensidad dentro de la voz (eco, compresión, ruido): recuento poco fiable.
+  const speechDb = Array.from(sm).filter((_, i) => speech[i]).sort((a, b) => a - b);
+  const lowContrast = speechDb.length > 0 && q99 - quantile(speechDb, 0.1) < 12;
   const kept: number[] = [];
   for (let i = 1; i < frames - 1; i++) {
     if (!speech[i] || sm[i]! < threshold || sm[i]! < sm[i - 1]! || sm[i]! < sm[i + 1]!) continue;
@@ -190,6 +205,7 @@ export function analyzeProsody(samples: Float32Array, sampleRate: number, runs: 
     f0RangeSt: enoughPitch ? round(quantile(st, 0.9) - quantile(st, 0.1), 1) : null,
     f0StdSt: enoughPitch ? round(stStd, 1) : null,
     intensityVarDb: peakDb.length >= 5 ? round(peakStd, 1) : null,
-    reliability: speechSec >= 3 && syllables >= 8 && voicedRatio >= 0.3 ? 'ok' : 'low',
+    // Umbral apto también para frases cortas de Listen and Repeat (≈ 2–3 s).
+    reliability: speechSec >= 1.5 && syllables >= 6 && voicedRatio >= 0.3 && !lowContrast ? 'ok' : 'low',
   };
 }

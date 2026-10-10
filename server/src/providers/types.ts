@@ -19,7 +19,8 @@ export interface SttProvider {
   name: string;
   model: string;
   dataPolicy: string;
-  transcribe(audio: Uint8Array, mime: string, opts: { signal: AbortSignal }): Promise<Transcript>;
+  /** `pronunciation: false` evita la evaluación agrupada (p. ej. Listen and Repeat, que se evalúa con guion aparte). */
+  transcribe(audio: Uint8Array, mime: string, opts: { signal: AbortSignal; pronunciation?: boolean }): Promise<Transcript>;
 }
 
 export interface PronunciationProvider {

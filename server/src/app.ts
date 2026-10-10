@@ -153,7 +153,7 @@ export function createApp(cfg: ServerConfig, deps: AppDeps = {}) {
     const durationParam = c.req.query('durationMs');
     const v = validateAudio(bytes, c.req.header('content-type'), durationParam ? Number(durationParam) : null, cfg.limits);
     if (!v.ok) return fail(c, v.status, v.code, v.message);
-    const out = await callProvider(c, 'transcribe', (signal) => stt.transcribe(bytes, v.mime, { signal }));
+    const out = await callProvider(c, 'transcribe', (signal) => stt.transcribe(bytes, v.mime, { signal, pronunciation: c.req.query('pronunciation') !== '0' }));
     if (!out.ok) return out.response;
     const t = out.result;
     if (t.durationSec && t.durationSec > cfg.limits.maxAudioSec + 2) {
