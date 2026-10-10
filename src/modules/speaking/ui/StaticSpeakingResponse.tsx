@@ -25,8 +25,8 @@ interface AudioClip {
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const MAX_UPLOAD_MS = 300_000;
-/** Segundos de respuesta sin texto tras los que se avisa de que el dictado no llega. */
-const NO_TEXT_WARNING_SEC = 8;
+/** Segundos sin texto tras los que se avisa de que el dictado no llega (antes en ítems cortos). */
+const noTextWarningSec = (responseSec: number) => Math.min(8, Math.max(3, responseSec * 0.4));
 const MIME_BY_EXT: Record<string, string> = {
   mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg', webm: 'audio/webm', flac: 'audio/flac', '3gp': 'audio/3gpp', amr: 'audio/amr',
 };
@@ -347,7 +347,7 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
   const words = countWords(text);
   const spanish = looksSpanish(text);
   const respondedSec = responseSec - countdown;
-  const noTextYet = phase === 'respond' && !sttActive && words === 0 && respondedSec >= NO_TEXT_WARNING_SEC;
+  const noTextYet = phase === 'respond' && !sttActive && words === 0 && respondedSec >= noTextWarningSec(responseSec);
   const dictationShortcut = guide.unavailable ? null : guide.shortcut;
 
   return (
@@ -370,7 +370,7 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
         </div>
       )}
 
-      <div className="space-y-4 rounded-xl border border-line bg-surface p-5" aria-live="polite">
+      <div className="space-y-4 rounded-xl border border-line bg-surface p-5">
         {phase === 'ready' && (
           <div className="space-y-4">
             {micBlocked ? (
@@ -459,11 +459,11 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
                 <strong>La página no graba tu voz.</strong> Con el cursor en el cuadro, activa el dictado{dictationShortcut ? <> (<kbd className="font-mono">{dictationShortcut}</kbd>)</> : null}: lo que digas debe aparecer escrito abajo.
               </p>
             )}
-            {noTextYet && (
+            <div aria-live="polite">{noTextYet && (
               <Alert tone="warn" title="No está llegando texto">
                 El dictado no parece activo. Haz clic en el cuadro y pulsa {dictationShortcut ?? 'el dictado de tu sistema'}; o sigue hablando y escribe tu respuesta al terminar.
               </Alert>
-            )}
+            )}</div>
           </div>
         )}
         {(phase === 'respond' || phase === 'review' || phase === 'saving') && (
@@ -568,7 +568,7 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
         )}
         {phase === 'saved' && (
           <div className="space-y-3">
-            <p className="text-sm font-medium text-ok">Respuesta guardada{saved?.hasAudio ? ` (audio de ${formatClock(saved.durationMs)})` : ''}.</p>
+            <p className="text-sm font-medium text-ok" role="status">Respuesta guardada{saved?.hasAudio ? ` (audio de ${formatClock(saved.durationMs)})` : ''}.</p>
             {saved?.text && <p className="rounded-lg bg-surface-3 p-3 font-serif text-ink">{saved.text}</p>}
             {saved?.url && <audio controls src={saved.url} className="w-full" aria-label="Escuchar tu respuesta" />}
             {!settings.saveRecordings && <p className="text-xs text-warn">El guardado local está desactivado: esta respuesta se perderá al recargar.</p>}
