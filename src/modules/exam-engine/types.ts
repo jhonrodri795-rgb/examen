@@ -18,6 +18,8 @@ export interface ExamConfig {
   speakingPrepSec: number;
   /** Práctica personalizada: sets elegidos en el banco. */
   customSetIds?: string[];
+  /** Simulación completa con contenido propio (formulario 1–20). */
+  form?: number;
   seed: number;
 }
 

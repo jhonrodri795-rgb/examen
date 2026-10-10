@@ -9,6 +9,8 @@ import type { Attempt } from '@/modules/exam-engine/types';
 import { listAttempts, listRecordingMeta } from '@/modules/storage/repositories';
 import { sectionName } from '@/modules/scoring/results';
 import type { SectionId } from '@/modules/question-bank/types';
+import { attemptTitle, formStatuses, nextForm } from '@/modules/exam-engine/forms-progress';
+import { cn } from '@/lib/format';
 import { STATIC_BUILD } from '@/lib/runtime';
 
 export const SECTION_INFO: Record<SectionId, { icon: typeof BookOpen; color: number; blurb: string }> = {
@@ -44,6 +46,10 @@ export function DashboardPage() {
   }, []);
 
   const inProgress = attempts?.find((a) => a.status === 'in-progress');
+  const forms = useMemo(() => formStatuses(attempts ?? [], bank), [attempts, bank]);
+  const upcoming = nextForm(forms);
+  const formsDone = forms.filter((f) => f.completed > 0).length;
+  const formsAvailable = forms.filter((f) => f.available).length;
   const completed = attempts?.filter((a) => a.status === 'completed') ?? [];
   const lastFull = completed.find((a) => a.config.kind === 'full' && a.results?.overallBand != null);
   const chart = useMemo(() => bandSeries(attempts ?? []), [attempts]);
@@ -68,7 +74,7 @@ export function DashboardPage() {
               Reading y Listening adaptativos, Writing con corrección por rúbrica y Speaking con grabación y análisis. Todo funciona en tu navegador, sin registro.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button size="lg" variant="light" onClick={() => navigate('/exam/new')} icon={<Play className="h-5 w-5" />}>
+              <Button size="lg" variant="light" onClick={() => navigate('/exam/new?form=next')} icon={<Play className="h-5 w-5" />}>
                 Simulación completa
               </Button>
               <Button size="lg" variant="onDark" onClick={() => navigate('/exam/new?blueprint=toefl-ibt-2026-quick&mode=practice')} icon={<Zap className="h-5 w-5" />}>
@@ -111,8 +117,39 @@ export function DashboardPage() {
             </Link>
           }
         >
-          {inProgress.blueprint.name} · {inProgress.config.mode === 'exam' ? 'modo examen' : 'modo práctica'} · iniciado el {formatDate(inProgress.createdAt)}
+          {attemptTitle(inProgress)} · {inProgress.config.mode === 'exam' ? 'modo examen' : 'modo práctica'} · iniciado el {formatDate(inProgress.createdAt)}
         </Alert>
+      )}
+
+      {formsAvailable > 0 && (
+        <Card>
+          <CardHeader
+            title="Simulaciones completas"
+            description={`${formsDone} de ${formsAvailable} hechas. Cada simulación tiene contenido propio: ninguna repite textos, audios ni tareas de otra.${upcoming ? ` Siguiente: n.º ${upcoming}.` : ''}`}
+            actions={upcoming ? <Button size="sm" onClick={() => navigate(`/exam/new?form=${upcoming}`)} icon={<Play className="h-4 w-4" />}>Empezar la n.º {upcoming}</Button> : undefined}
+          />
+          <ul className="grid grid-cols-5 gap-2 p-5 sm:grid-cols-10" aria-label="Estado de cada simulación">
+            {forms.map((f) => (
+              <li key={f.form}>
+                <button
+                  type="button"
+                  disabled={!f.available}
+                  onClick={() => (f.inProgressId ? navigate(`/exam/${f.inProgressId}`) : navigate(`/exam/new?form=${f.form}`))}
+                  title={!f.available ? 'Sin contenido' : f.inProgressId ? 'En curso: continuar' : f.completed ? `Hecha${f.bestBand != null ? ` · mejor banda ${formatBand(f.bestBand)}` : ''}` : 'Sin hacer'}
+                  aria-label={`Simulación ${f.form}: ${!f.available ? 'sin contenido' : f.inProgressId ? 'en curso' : f.completed ? 'hecha' : 'sin hacer'}`}
+                  className={cn(
+                    'flex h-11 w-full flex-col items-center justify-center rounded-lg border text-sm font-semibold tabular-nums transition-colors disabled:opacity-40',
+                    f.completed ? 'border-ok bg-ok-soft text-ok' : f.inProgressId ? 'border-accent bg-accent-soft text-accent' : 'border-line text-ink hover:bg-surface-3',
+                    f.form === upcoming && 'ring-2 ring-accent',
+                  )}
+                >
+                  {f.form}
+                  {f.bestBand != null && <span className="text-[10px] font-normal leading-none">{formatBand(f.bestBand)}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
 
       <section aria-label="Estadísticas" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -183,7 +220,7 @@ export function DashboardPage() {
                   <Link to={a.status === 'completed' ? `/results/${a.id}` : `/exam/${a.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-surface-3">
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium text-ink">
-                        {a.config.kind === 'full' ? a.blueprint.name : a.config.kind === 'custom' ? 'Práctica personalizada' : `Práctica: ${a.sections.map((s) => sectionName(s.id)).join(', ')}`}
+                        {a.config.kind === 'full' ? attemptTitle(a) : a.config.kind === 'custom' ? 'Práctica personalizada' : `Práctica: ${a.sections.map((s) => sectionName(s.id)).join(', ')}`}
                       </span>
                       <span className="block text-xs text-muted">{formatDate(a.createdAt)}</span>
                     </span>

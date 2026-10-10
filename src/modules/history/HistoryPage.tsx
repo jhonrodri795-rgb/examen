@@ -10,10 +10,11 @@ import { deleteAttempt, listAttempts } from '@/modules/storage/repositories';
 import { ratio, sectionName } from '@/modules/scoring/results';
 import { SKILL_LABEL } from '@/modules/scoring/advice';
 import type { Skill } from '@/modules/question-bank/types';
+import { attemptTitle as formAttemptTitle } from '@/modules/exam-engine/forms-progress';
 import { bandSeries } from '../dashboard/DashboardPage';
 
 function attemptTitle(a: Attempt) {
-  if (a.config.kind === 'full') return a.blueprint.name;
+  if (a.config.kind === 'full') return formAttemptTitle(a);
   if (a.config.kind === 'custom') return 'Práctica personalizada';
   return `Práctica: ${a.sections.map((s) => sectionName(s.id)).join(', ')}`;
 }

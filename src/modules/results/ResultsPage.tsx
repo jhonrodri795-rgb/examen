@@ -13,6 +13,7 @@ import { SKILL_LABEL } from '@/modules/scoring/advice';
 import { computeResults, ratio, sectionName } from '@/modules/scoring/results';
 import { WritingAssessment } from '@/modules/writing/ui/WritingAssessment';
 import { SpeakingReportView } from '@/modules/speaking/ui/SpeakingReportView';
+import { attemptTitle } from '@/modules/exam-engine/forms-progress';
 import { startAttempt } from '@/modules/exam-engine/ui/ExamSetupPage';
 
 const ICONS: Record<SectionId, typeof BookOpen> = { reading: BookOpen, listening: Headphones, writing: PenLine, speaking: Mic };
@@ -171,7 +172,7 @@ export function ResultsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Resultados"
-        description={`${attempt.blueprint.name} · ${attempt.config.mode === 'exam' ? 'modo examen' : 'modo práctica'} · ${formatDate(attempt.finishedAt ?? attempt.createdAt)}`}
+        description={`${attemptTitle(attempt)} · ${attempt.config.mode === 'exam' ? 'modo examen' : 'modo práctica'} · ${formatDate(attempt.finishedAt ?? attempt.createdAt)}`}
         actions={
           <>
             <Link to={`/results/${attempt.id}/review`}>

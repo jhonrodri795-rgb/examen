@@ -109,7 +109,7 @@ export function createAttempt(
           });
           continue;
         }
-        const { setIds, warnings } = assembleParts(mSpec.parts ?? [], bank, used, hashString(`${config.seed}:${sectionId}.${mSpec.id}`), exposure);
+        const { setIds, warnings } = assembleParts(mSpec.parts ?? [], bank, used, hashString(`${config.seed}:${sectionId}.${mSpec.id}`), exposure, config.form);
         modules.push(makeModule(sectionId, mSpec, setIds, warnings, bank, config, null));
       }
       sections.push({ id: sectionId, status: 'pending', modules });
@@ -304,6 +304,7 @@ export function finishModule(attempt: Attempt, bank: QuestionBank, now: number, 
         used,
         hashString(`${a.config.seed}:${next.key}:${variant}`),
         a.exposure,
+        a.config.form,
       );
       const built = makeModule(section.id, mSpec, setIds, warnings, bank, a.config, variant);
       section.modules[nextIndex] = { ...built, timer: next.timer };

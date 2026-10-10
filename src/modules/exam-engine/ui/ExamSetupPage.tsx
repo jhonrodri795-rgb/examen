@@ -1,15 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { BookOpen, Clock, Headphones, Mic, PenLine, Play, ShieldCheck, Sparkles } from 'lucide-react';
+import { BookOpen, Clock, Headphones, Mic, PenLine, Play, RotateCcw, ShieldCheck, Shuffle, Sparkles } from 'lucide-react';
 import { useBank, useSettings, useToast } from '@/app/context';
 import { Alert, Badge, Button, Card, CardHeader, PageHeader, Select, Switch } from '@/components/ui';
 import { cn } from '@/lib/format';
 import type { SectionId } from '@/modules/question-bank/types';
-import { saveAttempt, setExposure } from '@/modules/storage/repositories';
+import { listAttempts, saveAttempt, setExposure } from '@/modules/storage/repositories';
 import type { QuestionBank } from '@/modules/question-bank/registry';
 import { BLUEPRINTS, getBlueprint } from '../blueprints';
 import { createAttempt } from '../engine';
+import { formStatuses, nextForm, type FormStatus } from '../forms-progress';
 import type { ExamConfig, ExamMode, TimingMode } from '../types';
+
+function formLabel(f: FormStatus): string {
+  const state = f.inProgressId ? 'en curso' : f.completed ? `hecha${f.completed > 1 ? ` ×${f.completed}` : ''}${f.bestBand !== null ? ` · mejor banda ${f.bestBand}` : ''}` : 'nueva';
+  return `Simulación n.º ${f.form} — ${state}`;
+}
 
 const SECTION_META: Record<SectionId, { label: string; icon: typeof BookOpen }> = {
   reading: { label: 'Reading', icon: BookOpen },
@@ -44,6 +50,32 @@ export function ExamSetupPage() {
   const [speakingPrepSec, setSpeakingPrepSec] = useState(settings.speakingPrepSec);
   const [busy, setBusy] = useState(false);
   const blueprint = getBlueprint(blueprintId);
+  const formParam = params.get('form');
+  const [statuses, setStatuses] = useState<FormStatus[] | null>(null);
+  /** Formulario elegido: número, 'random' (mezcla del banco) o null mientras se resuelve «siguiente». */
+  const [formChoice, setFormChoice] = useState<number | 'random' | null>(formParam === 'random' ? 'random' : Number(formParam) > 0 ? Number(formParam) : null);
+
+  useEffect(() => {
+    let alive = true;
+    listAttempts()
+      .catch(() => [])
+      .then((attempts) => {
+        if (!alive) return;
+        const st = formStatuses(attempts, bank);
+        setStatuses(st);
+        setFormChoice((prev) => {
+          if (prev === 'random') return prev;
+          if (typeof prev === 'number' && st.some((f) => f.form === prev && f.available)) return prev;
+          return nextForm(st) ?? 'random';
+        });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [bank]);
+
+  const availableForms = statuses?.filter((f) => f.available) ?? [];
+  const chosenForm = typeof formChoice === 'number' ? statuses?.find((f) => f.form === formChoice) : undefined;
 
   const summary = useMemo(() => {
     const chosen = blueprint.sections.filter((s) => (kind === 'full' ? true : sections.includes(s.id)));
@@ -64,6 +96,7 @@ export function ExamSetupPage() {
         relaxedListening: mode === 'practice' && relaxedListening,
         speakingPrepSec: mode === 'practice' ? speakingPrepSec : 0,
         seed: Math.floor(Math.random() * 2 ** 31),
+        ...(kind === 'full' && typeof formChoice === 'number' ? { form: formChoice } : {}),
       };
       const id = await startAttempt(config, bank);
       navigate(`/exam/${id}`);
@@ -111,6 +144,39 @@ export function ExamSetupPage() {
                     </button>
                   );
                 })}
+              </div>
+            )}
+            {kind === 'full' && availableForms.length > 0 && (
+              <div className="space-y-3 border-t border-line p-5">
+                <Select
+                  id="form"
+                  label="Prueba"
+                  value={formChoice === null ? '' : String(formChoice)}
+                  onChange={(v) => setFormChoice(v === 'random' ? 'random' : Number(v))}
+                  options={[
+                    ...(formChoice === null ? [{ value: '', label: 'Cargando…' }] : []),
+                    ...availableForms.map((f) => ({ value: String(f.form), label: formLabel(f) })),
+                    { value: 'random', label: 'Aleatoria (mezcla del banco general)' },
+                  ]}
+                />
+                <p className="flex gap-2 text-xs text-muted">
+                  {formChoice === 'random' ? <Shuffle className="h-4 w-4 shrink-0" /> : <Sparkles className="h-4 w-4 shrink-0" />}
+                  {formChoice === 'random'
+                    ? 'Combina textos y tareas del banco general, priorizando los que menos has visto. Puede repetir contenido de las simulaciones numeradas.'
+                    : `Cada simulación numerada tiene sus propios textos, audios y tareas, distintos de las otras ${availableForms.length - 1}. Por defecto se propone la siguiente que no has hecho.`}
+                </p>
+                {chosenForm?.inProgressId && (
+                  <Alert
+                    tone="info"
+                    action={
+                      <Button size="sm" variant="secondary" icon={<RotateCcw className="h-4 w-4" />} onClick={() => navigate(`/exam/${chosenForm.inProgressId}`)}>
+                        Continuar donde la dejaste
+                      </Button>
+                    }
+                  >
+                    Ya tienes esta simulación empezada. Si pulsas «Empezar» se creará un intento nuevo con el mismo contenido.
+                  </Alert>
+                )}
               </div>
             )}
           </Card>
@@ -164,14 +230,18 @@ export function ExamSetupPage() {
                   </li>
                 ))}
               </ul>
-              <Badge tone={mode === 'exam' ? 'brand' : 'accent'}>{mode === 'exam' ? 'Modo examen' : 'Modo práctica'}</Badge>
+              <div className="flex flex-wrap gap-2">
+                <Badge tone={mode === 'exam' ? 'brand' : 'accent'}>{mode === 'exam' ? 'Modo examen' : 'Modo práctica'}</Badge>
+                {kind === 'full' && typeof formChoice === 'number' && <Badge tone="neutral">Simulación n.º {formChoice}</Badge>}
+                {kind === 'full' && formChoice === 'random' && <Badge tone="neutral">Prueba aleatoria</Badge>}
+              </div>
               {summary.chosen.some((s) => s.id === 'speaking') && (
                 <Alert tone="info">Speaking necesita micrófono. Se te pedirá permiso al empezar esa sección.</Alert>
               )}
               <p className="flex gap-2 text-xs text-muted">
                 <ShieldCheck className="h-4 w-4 shrink-0" /> Las respuestas se guardan automáticamente en este navegador. Si recargas, podrás reanudar el intento.
               </p>
-              <Button size="lg" className="w-full justify-center" onClick={start} loading={busy} disabled={kind === 'section' && sections.length === 0} icon={<Play className="h-5 w-5" />}>
+              <Button size="lg" className="w-full justify-center" onClick={start} loading={busy} disabled={(kind === 'section' && sections.length === 0) || (kind === 'full' && availableForms.length > 0 && formChoice === null)} icon={<Play className="h-5 w-5" />}>
                 Empezar
               </Button>
             </div>

@@ -14,6 +14,10 @@ const DIFF_LABEL: Record<Difficulty, string> = { easy: 'fácil', medium: 'media'
 
 /**
  * Selecciona sets del banco para las partes de un módulo.
+ * - Con `form`, usa solo el contenido de ese formulario (simulación completa
+ *   con contenido propio); si faltara algo, completa con el banco general y avisa.
+ * - Sin `form` (práctica), prioriza el contenido general y deja para el final
+ *   el de los formularios, para no gastar las simulaciones.
  * - Respeta la dificultad preferida y la relaja si no hay contenido suficiente.
  * - Evita repetir sets dentro del mismo intento.
  * - Prioriza los sets menos vistos en intentos anteriores.
@@ -24,16 +28,23 @@ export function assembleParts(
   used: Set<string>,
   seed: number,
   exposure: Record<string, number> = {},
+  form?: number,
 ): AssemblyResult {
   const rng = createRng(seed);
   const setIds: string[] = [];
   const warnings: string[] = [];
 
+  // Prioridad: el formulario pedido; después el banco general; al final otros formularios.
+  const priority = (x: ContentSet) => (form ? (x.form === form ? 0 : x.form ? 2 : 1) : x.form ? 1 : 0);
   const rank = (sets: ContentSet[]) =>
-    shuffle(sets, rng).sort((a, b) => (exposure[a.id] ?? 0) - (exposure[b.id] ?? 0));
+    shuffle(sets, rng).sort((a, b) => priority(a) - priority(b) || (exposure[a.id] ?? 0) - (exposure[b.id] ?? 0));
 
   for (const part of parts) {
-    const available = bank.sets.filter((s) => s.task === part.task && !used.has(s.id));
+    const ofTask = bank.sets.filter((s) => s.task === part.task && !used.has(s.id));
+    const inForm = form ? ofTask.filter((s) => s.form === form) : [];
+    // Con formulario: primero su contenido; el resto solo como reserva.
+    const available = form && inForm.length >= part.sets ? inForm : form ? [...inForm, ...ofTask.filter((s) => s.form !== form)] : ofTask;
+    if (form && inForm.length < part.sets) warnings.push(`${part.task}: el formulario ${form} no tiene contenido suficiente; se completó con el banco general.`);
     const chosen: ContentSet[] = [];
     const prefs = part.difficulty ?? [];
     for (const d of prefs) {
