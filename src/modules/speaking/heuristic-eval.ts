@@ -51,6 +51,26 @@ export function heuristicEvaluation(input: HeuristicInput): SpeakingEvaluation {
       s -= 0.5;
       ev.push({ quote: `leadingSilenceSec = ${a.leadingSilenceSec}`, source: 'audio-metrics' });
     }
+    const p = a.prosody?.reliability === 'ok' ? a.prosody : null;
+    if (p && m?.wordsPerMinute == null && p.speechRateSps != null) {
+      // Sin transcripción: ritmo estimado en sílabas por segundo (aproximado).
+      ev.push({ quote: `prosody.speechRateSps = ${p.speechRateSps}; meanRunSyllables = ${p.meanRunSyllables ?? '—'}`, source: 'audio-metrics' });
+      if (p.speechRateSps < 2) s -= 1.5;
+      else if (p.speechRateSps < 2.6) s -= 1;
+      else if (p.speechRateSps < 3.1) s -= 0.5;
+      else strengths.push(`Ritmo de habla fluido (${p.speechRateSps} sílabas por segundo, estimado).`);
+    }
+    if (p?.meanRunSyllables != null && p.meanRunSyllables < 4) {
+      s -= 0.5;
+      exercises.push('Encadena más palabras entre pausas: practica frases completas de 8–10 sílabas sin detenerte (shadowing con audios en inglés).');
+    }
+    if (p?.f0RangeSt != null) {
+      ev.push({ quote: `prosody.f0RangeSt = ${p.f0RangeSt}`, source: 'audio-metrics' });
+      if (p.f0RangeSt < 3) {
+        s -= 0.5;
+        issues.push({ quote: `f0RangeSt = ${p.f0RangeSt}`, problem: 'Poca variación de tono: la entonación puede sonar plana o monótona.', suggestion: 'Marca las palabras clave subiendo el tono y baja al final de cada idea.', kind: 'fluency' });
+      } else if (p.f0RangeSt >= 5) strengths.push('Entonación variada (buen rango de tono).');
+    }
     if (m?.wordsPerMinute != null) {
       ev.push({ quote: `wordsPerMinute = ${m.wordsPerMinute}`, source: 'audio-metrics' });
       if (m.wordsPerMinute < 80) s -= 1.5;
@@ -73,7 +93,7 @@ export function heuristicEvaluation(input: HeuristicInput): SpeakingEvaluation {
       criterion: 'delivery',
       evaluable: true,
       score: half(s),
-      rationale: `Basado en pausas largas (${a.longPauseCount}), proporción de tiempo hablando (${Math.round(a.phonationRatio * 100)} %)${m?.wordsPerMinute != null ? `, ritmo (${m.wordsPerMinute} ppm)` : ''}${m ? ` y muletillas detectadas (${m.fillerCount})` : ''}. ${m ? '' : 'Sin transcripción no se puede medir el ritmo en palabras por minuto.'}`.trim(),
+      rationale: `Basado en pausas largas (${a.longPauseCount}), proporción de tiempo hablando (${Math.round(a.phonationRatio * 100)} %)${m?.wordsPerMinute != null ? `, ritmo (${m.wordsPerMinute} ppm)` : p?.speechRateSps != null ? `, ritmo estimado (${p.speechRateSps} sílabas/s)` : ''}${p?.f0RangeSt != null ? `, variación de tono (${p.f0RangeSt} semitonos)` : ''}${m ? ` y muletillas detectadas (${m.fillerCount})` : ''}.${a.prosody?.reliability === 'low' ? ' Hay poca voz para estimar sílabas y tono con fiabilidad.' : ''}`.trim(),
       evidence: ev,
     });
     if (a.longPauseCount > 1) exercises.push('Practica respuestas de 45 s con la estructura respuesta → razón → ejemplo para reducir pausas largas; graba y compara el número de pausas.');

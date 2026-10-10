@@ -46,7 +46,7 @@ const SpeakingEvalBody = z.object({
     referenceText: z.string().max(1000).optional(),
     responseSec: z.number().positive().max(600),
   }),
-  transcript: z.object({ text: z.string().max(20000), provider: z.string().max(60), lowConfidenceWords: z.array(z.string().max(60)).max(500), source: z.enum(['asr', 'self']).optional() }),
+  transcript: z.object({ text: z.string().max(20000), provider: z.string().max(60), lowConfidenceWords: z.array(z.string().max(60)).max(500), source: z.enum(['asr', 'self', 'none']).optional() }),
   durationSec: z.number().positive().max(600).nullable(),
   acoustic: z.record(z.string(), z.unknown()).nullable(),
   transcriptMetrics: z.record(z.string(), z.unknown()).nullable(),
@@ -181,7 +181,9 @@ export function createApp(cfg: ServerConfig, deps: AppDeps = {}) {
     const parsed = SpeakingEvalBody.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return fail(c, 400, 'invalid_body', 'Datos de evaluación incompletos o inválidos.');
     const body = parsed.data;
-    if (body.transcript.text.trim().split(/\s+/).length < 3) return fail(c, 422, 'transcript_too_short', 'La transcripción es demasiado breve para evaluarla.');
+    // Sin texto se puede evaluar solo la fluidez si hay métricas del audio.
+    const words = body.transcript.text.trim().split(/\s+/).filter(Boolean).length;
+    if (words < 3 && !(body.transcript.source === 'none' && body.acoustic)) return fail(c, 422, 'transcript_too_short', 'La transcripción es demasiado breve para evaluarla.');
     const out = await callProvider(c, 'evaluate-speaking', (signal) => evaluator.evaluateSpeaking(body, { signal }));
     return out.ok ? c.json(out.result) : out.response;
   });

@@ -124,7 +124,7 @@ function PracticeTab({ initialItem }: { initialItem?: string | null }) {
             {recordingId ? (
               <SpeakingReportView key={recordingId} recordingId={recordingId} task={item.task} autoAnalyze onPracticeAgain={reset} onDeleted={reset} />
             ) : (
-              <EmptyState icon={<Mic className="h-8 w-8" />} title={STATIC_BUILD ? 'Responde a la pregunta' : 'Graba tu respuesta'} description={STATIC_BUILD ? 'Cuando guardes tu respuesta verás aquí la evaluación por criterios con Claude y, si subes audio, las métricas de pausas y ritmo.' : 'Cuando termines, verás aquí el análisis: métricas de la señal, transcripción (si está configurada) y evaluación por criterios.'} />
+              <EmptyState icon={<Mic className="h-8 w-8" />} title={STATIC_BUILD ? 'Responde a la pregunta' : 'Graba tu respuesta'} description={STATIC_BUILD ? 'Cuando guardes tu respuesta verás aquí tu fluidez medida en el audio (ritmo, pausas, entonación) y la evaluación por criterios con Claude.' : 'Cuando termines, verás aquí el análisis: métricas de la señal, transcripción (si está configurada) y evaluación por criterios.'} />
             )}
             {recordingId && itemIdx < items.length - 1 && (
               <Button className="mt-4" variant="secondary" onClick={() => { setItemIdx((i) => i + 1); reset(); }}>
@@ -346,12 +346,19 @@ export function SpeakingStudioPage() {
   useEffect(() => () => mic.release(), [mic]);
   return (
     <div>
-      <PageHeader title="Estudio de Speaking" description={STATIC_BUILD ? 'Practica las tareas del formato 2026 respondiendo en voz alta (con el dictado de tu sistema o el micrófono, si el visor lo permite) y recibe una evaluación por criterios con Claude.' : 'Configura el micrófono, practica las tareas del formato 2026 y revisa informes basados en evidencia de tu audio y su transcripción.'} />
+      <PageHeader title="Estudio de Speaking" description={STATIC_BUILD ? 'Practica las tareas del formato 2026 en voz alta: sube la grabación de tu respuesta para medir tu fluidez (ritmo, pausas, entonación) y recibe una evaluación por criterios con Claude.' : 'Configura el micrófono, practica las tareas del formato 2026 y revisa informes basados en evidencia de tu audio y su transcripción.'} />
       <Tabs
         value={tab}
         onValueChange={(v) => setParams({ tab: v }, { replace: true })}
         tabs={[
-          { value: 'mic', label: STATIC_BUILD ? 'Cómo responder' : 'Micrófono', content: <Card className="max-w-2xl space-y-4 p-5"><MicSetupPanel />{STATIC_BUILD && <DictationCheck />}</Card> },
+          { value: 'mic', label: STATIC_BUILD ? 'Cómo responder' : 'Micrófono', content: <Card className="max-w-2xl space-y-4 p-5"><MicSetupPanel />{STATIC_BUILD && (
+            <details className="rounded-lg border border-line bg-surface-2 p-3 text-sm">
+              <summary className="cursor-pointer font-medium text-ink">Opcional: dictar o escribir tu respuesta (para evaluar el contenido)</summary>
+              <div className="mt-2">
+                <DictationCheck className="border-0 bg-transparent p-0" />
+              </div>
+            </details>
+          )}</Card> },
           { value: 'practice', label: 'Practicar', content: <PracticeTab initialItem={params.get('item')} /> },
           { value: 'history', label: 'Historial', content: <HistoryTab /> },
           { value: 'privacy', label: 'Privacidad', content: <PrivacyTab /> },

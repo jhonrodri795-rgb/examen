@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, FileAudio, Headphones, Mic, Play, RotateCcw, Save, Square, Timer, Trash2, Type, Upload } from 'lucide-react';
+import { FileAudio, Gauge, Headphones, Info, Mic, Play, RotateCcw, Save, Scissors, Square, Timer, Trash2, Upload } from 'lucide-react';
 import { Alert, Badge, Button, ProgressBar } from '@/components/ui';
 import { useMic, useSettings } from '@/app/context';
 import { countWords, formatClock } from '@/lib/format';
 import { playScript, type PlaybackHandle } from '@/modules/listening/tts';
-import { decodeToMono } from '../acoustic';
+import { decodeToMono, encodeWav } from '../acoustic';
+import { responseWindow } from '../beep';
 import { BROWSER_STT_POLICY, LiveTranscriber, speechRecognitionCtor } from '../browser-stt';
-import { currentPlatform, DICTATION_GUIDES, looksSpanish, micPolicy } from '../dictation';
+import { currentPlatform, DICTATION_GUIDES, looksSpanish, micPolicy, RECORDER_GUIDES } from '../dictation';
 import { Recorder, type RecordingResult } from '../recorder';
 import { hasAudio, loadRecording, recordingBlob, storeStaticResponse } from '../recordings';
-import { DictationCheck, DictationGuide, dictationVerified } from './DictationCheck';
+import { DictationCheck, DictationGuide } from './DictationCheck';
 import { LevelMeterBar } from './MicPanel';
 import { beep, type SpeakingRecorderProps } from './SpeakingRecorder';
 
@@ -21,12 +22,14 @@ interface AudioClip {
   durationMs: number;
   url: string;
   source: 'mic' | 'upload';
+  /** Audio subido decodificado, para recortar la respuesta. */
+  decoded?: { samples: Float32Array; sampleRate: number; original: Blob };
+  /** Tramo analizado (s) y si se detectó por el pitido. */
+  trim?: { start: number; end: number; total: number; auto: boolean };
 }
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const MAX_UPLOAD_MS = 300_000;
-/** Segundos sin texto tras los que se avisa de que el dictado no llega (antes en ítems cortos). */
-const noTextWarningSec = (responseSec: number) => Math.min(8, Math.max(3, responseSec * 0.4));
 const MIME_BY_EXT: Record<string, string> = {
   mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg', webm: 'audio/webm', flac: 'audio/flac', '3gp': 'audio/3gpp', amr: 'audio/amr',
 };
@@ -99,7 +102,6 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
   const [recording, setRecording] = useState(false);
   const [sttActive, setSttActive] = useState(false);
   const [sttError, setSttError] = useState<string | null>(null);
-  const [showCheck, setShowCheck] = useState(() => !dictationVerified());
 
   const useMicNow = !micBlocked && useMicPref;
   const liveStt = useMicNow && !!SR && liveSttPref && settings.cloudConsent !== 'denied';
@@ -250,7 +252,6 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
     setSaveError(null);
     setMicNote(null);
     setSttError(null);
-    setShowCheck(false);
     let stream: MediaStream | null = null;
     if (useMicNow) {
       // Solo tras pulsar «Empezar» (o al entrar en el ítem de una simulación).
@@ -273,10 +274,23 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
   }, [useMicNow, mic, settings, promptLines, startPrep]);
 
   useEffect(() => {
-    if (autoStart && phase === 'ready') void start();
+    if (autoStart && !micBlocked && phase === 'ready') void start();
     // Solo al montar / cambiar de ítem.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, meta.itemId]);
+
+  /** Recorta el audio subido al tramo [start, end] (s) y lo codifica en WAV para analizar solo la respuesta. */
+  const trimClip = (clip: AudioClip, start: number, end: number, auto: boolean): AudioClip => {
+    const d = clip.decoded!;
+    const total = d.samples.length / d.sampleRate;
+    const a = Math.max(0, Math.min(start, total));
+    const b = Math.max(a, Math.min(end, total));
+    if (a <= 0.01 && b >= total - 0.01) {
+      return { ...clip, blob: d.original, url: makeUrl(d.original), durationMs: total * 1000, trim: { start: 0, end: total, total, auto: false } };
+    }
+    const wav = new Blob([encodeWav(d.samples.subarray(Math.round(a * d.sampleRate), Math.round(b * d.sampleRate)), d.sampleRate)], { type: 'audio/wav' });
+    return { ...clip, blob: wav, url: makeUrl(wav), durationMs: (b - a) * 1000, trim: { start: a, end: b, total, auto } };
+  };
 
   const onFile = async (file: File | undefined) => {
     setAudioError(null);
@@ -289,8 +303,13 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
       const durationMs = (samples.length / sampleRate) * 1000;
       if (durationMs < 800) return setAudioError('El audio dura menos de 1 segundo.');
       if (durationMs > MAX_UPLOAD_MS) return setAudioError('El audio dura más de 5 minutos: recórtalo a tu respuesta.');
-      const blob = new Blob([buf], { type: mimeOf(file) });
-      setAudio({ blob, name: file.name, durationMs, url: makeUrl(blob), source: 'upload' });
+      const original = new Blob([buf], { type: mimeOf(file) });
+      const base: AudioClip = { blob: original, name: file.name, durationMs, url: '', source: 'upload', decoded: { samples, sampleRate, original } };
+      // Si la grabación incluye el pitido de inicio (y el de fin), se analiza solo la respuesta.
+      const w = responseWindow(samples, sampleRate);
+      const clip = w && w.end - w.start >= 1 ? trimClip(base, w.start, w.end, true) : trimClip(base, 0, durationMs / 1000, false);
+      if (!alive.current) return;
+      setAudio(clip);
     } catch {
       setAudioError('No se pudo leer el audio en este navegador. Prueba con MP3, M4A, WAV, OGG o WebM.');
     } finally {
@@ -347,15 +366,14 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
   const words = countWords(text);
   const spanish = looksSpanish(text);
   const respondedSec = responseSec - countdown;
-  const noTextYet = phase === 'respond' && !sttActive && words === 0 && respondedSec >= noTextWarningSec(responseSec);
   const dictationShortcut = guide.unavailable ? null : guide.shortcut;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Badge tone={recording ? 'bad' : 'neutral'}>
-          {recording ? <Mic className="h-3 w-3" aria-hidden /> : <Type className="h-3 w-3" aria-hidden />}
-          {recording ? 'Grabando con el micrófono' : useMicNow ? 'Micrófono + texto' : 'Respuesta por dictado o escrita'}
+          {recording || useMicNow ? <Mic className="h-3 w-3" aria-hidden /> : <FileAudio className="h-3 w-3" aria-hidden />}
+          {recording ? 'Grabando con el micrófono' : useMicNow ? 'Micrófono de la página' : 'Grabación con otra app'}
         </Badge>
         <div className="flex items-center gap-2 text-xs text-muted">
           <Timer className="h-3.5 w-3.5" aria-hidden />
@@ -374,17 +392,25 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
         {phase === 'ready' && (
           <div className="space-y-4">
             {micBlocked ? (
-              <Alert tone="warn" title="Esta página no puede grabar tu voz">
-                El visor de claude.ai no permite que las páginas publicadas usen el micrófono. Para que tu respuesta cuente, tu voz tiene que convertirse en <strong>texto</strong> en el cuadro de respuesta con el <strong>dictado de tu sistema</strong>
-                {dictationShortcut ? <> ({dictationShortcut})</> : null}, o puedes escribirla justo después de decirla. No necesitas subir ningún audio.
-              </Alert>
+              <div className="space-y-3">
+                <Alert tone="info" title="Para calificar tu fluidez, grábate con otra app">
+                  El visor de claude.ai no deja que esta página use el micrófono. Graba tu respuesta con la grabadora de tu dispositivo y súbela: la página mide tu ritmo (sílabas por segundo), tus pausas y tu entonación, y Claude califica tu fluidez con esas medidas.
+                </Alert>
+                <ol className="list-decimal space-y-1.5 pl-5 text-sm text-ink-2">
+                  <li>
+                    Abre la grabadora: <span className="text-ink">{RECORDER_GUIDES[platform]}</span>
+                  </li>
+                  <li>Empieza a grabar y pulsa «Empezar». {promptLines ? 'Escucharás la consigna y un pitido' : 'Sonará un pitido'}: responde en voz alta después del pitido.</li>
+                  <li>Al terminar, detén la grabación y súbela aquí. La página detecta el pitido y analiza solo tu respuesta.</li>
+                </ol>
+              </div>
             ) : (
               <div className="space-y-2 rounded-lg border border-line p-3 text-sm">
                 <label className="flex items-start gap-2">
                   <input type="checkbox" className="mt-1 accent-sky-600" checked={useMicPref} onChange={(e) => { setUseMicPref(e.target.checked); writePref('toefl-static-use-mic', e.target.checked); }} />
                   <span>
                     <span className="font-medium text-ink">Grabar con el micrófono en esta página</span>
-                    <span className="block text-xs text-muted">Se pedirá permiso al pulsar «Empezar». El audio se analiza en tu navegador (pausas, ritmo) y no se envía a Claude.</span>
+                    <span className="block text-xs text-muted">Se pedirá permiso al pulsar «Empezar». El audio se analiza en tu navegador (ritmo, pausas, entonación) y no se envía a Claude.</span>
                   </span>
                 </label>
                 {useMicPref && SR && settings.cloudConsent !== 'denied' && (
@@ -396,33 +422,24 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
                     </span>
                   </label>
                 )}
-                {useMicPref && !liveStt && <p className="text-xs text-muted">Sin transcripción automática, usa también el dictado de tu sistema o escribe lo que dijiste para que Claude evalúe el contenido.</p>}
+                {!useMicPref && <p className="text-xs text-muted">Sin micrófono, sube después una grabación hecha con otra app para medir la fluidez.</p>}
               </div>
             )}
             {micNote && <Alert tone="warn">{micNote}</Alert>}
             {!liveStt && (
-              showCheck ? (
-                <DictationCheck />
-              ) : (
-                <details className="rounded-lg border border-line bg-surface-2 p-3 text-sm">
-                  <summary className="cursor-pointer font-medium text-ink">Cómo dictar y probar el dictado</summary>
-                  <div className="mt-2">
-                    <DictationCheck className="border-0 bg-transparent p-0" />
-                  </div>
-                </details>
-              )
+              <details className="rounded-lg border border-line bg-surface-2 p-3 text-sm">
+                <summary className="cursor-pointer font-medium text-ink">Opcional: dicta o escribe tu respuesta para evaluar también gramática y contenido</summary>
+                <div className="mt-2">
+                  <DictationCheck className="border-0 bg-transparent p-0" />
+                </div>
+              </details>
             )}
-            <ol className="list-decimal space-y-1 pl-5 text-sm text-ink-2">
-              <li>Pulsa «Empezar»{promptLines ? ', escucha la consigna' : ''} y espera el pitido.</li>
-              <li>{liveStt ? 'Responde en voz alta: lo que digas se transcribirá en el cuadro.' : useMicNow ? 'Responde en voz alta (se graba el audio) y activa el dictado en el cuadro para que tu respuesta quede escrita.' : `Activa el dictado${dictationShortcut ? ` (${dictationShortcut})` : ''} con el cursor en el cuadro y responde en voz alta: tu voz se escribirá en el cuadro.`}</li>
-              <li>Al terminar, revisa que el texto refleje lo que dijiste y pulsa «Guardar y evaluar».</li>
-            </ol>
             <div className="flex flex-wrap gap-2">
               <Button size="lg" onClick={() => void start()} icon={useMicNow ? <Mic className="h-5 w-5" /> : <Play className="h-5 w-5" />}>
                 Empezar
               </Button>
-              <Button variant="ghost" onClick={() => { setShowCheck(false); setPhase('review'); }}>
-                Escribir sin cronómetro
+              <Button variant="ghost" onClick={() => setPhase('review')}>
+                {micBlocked ? 'Ya tengo la grabación' : 'Responder sin cronómetro'}
               </Button>
             </div>
           </div>
@@ -438,7 +455,7 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
             <Badge tone="accent">Tiempo de preparación</Badge>
             <p className="text-4xl font-semibold tabular-nums text-ink">{formatClock(countdown * 1000)}</p>
             <ProgressBar value={prepSec - countdown} max={prepSec} label="Preparación" />
-            {!useMicNow && <p className="text-xs text-muted">Prepara el dictado{dictationShortcut ? ` (${dictationShortcut})` : ''}: lo activarás cuando suene el pitido.</p>}
+            {!useMicNow && <p className="text-xs text-muted">Comprueba que tu grabadora está grabando: responderás al sonar el pitido.</p>}
           </div>
         )}
         {phase === 'respond' && (
@@ -454,27 +471,25 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
             </div>
             <ProgressBar value={respondedSec} max={responseSec} label="Tiempo de respuesta" tone={countdown < responseSec * 0.2 ? 'warn' : 'accent'} />
             {recording && <LevelMeterBar stream={mic.getStream()} />}
-            {!recording && !sttActive && (
-              <p className="rounded-lg bg-accent-soft p-2 text-sm text-ink">
-                <strong>La página no graba tu voz.</strong> Con el cursor en el cuadro, activa el dictado{dictationShortcut ? <> (<kbd className="font-mono">{dictationShortcut}</kbd>)</> : null}: lo que digas debe aparecer escrito abajo.
+            {!recording && (
+              <p className="flex items-start gap-2 rounded-lg bg-accent-soft p-2 text-sm text-ink">
+                <Mic className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+                <span>
+                  <strong>Habla ahora: tu grabadora debe estar grabando.</strong> Esta página no graba; al terminar subirás el audio.
+                </span>
               </p>
             )}
-            <div aria-live="polite">{noTextYet && (
-              <Alert tone="warn" title="No está llegando texto">
-                El dictado no parece activo. Haz clic en el cuadro y pulsa {dictationShortcut ?? 'el dictado de tu sistema'}; o sigue hablando y escribe tu respuesta al terminar.
-              </Alert>
-            )}</div>
           </div>
         )}
         {(phase === 'respond' || phase === 'review' || phase === 'saving') && (
           <div className="space-y-2">
             <label htmlFor={`self-tr-${meta.itemId}`} className="text-sm font-medium text-ink">
-              Tu respuesta en inglés {sttActive ? '(transcripción automática en curso)' : '(dictada o escrita, tal como la dijiste)'}
+              {sttActive ? 'Tu respuesta en inglés (transcripción automática en curso)' : 'Opcional: tu respuesta en texto (dictada o escrita, tal como la dijiste) para evaluar también gramática y contenido'}
             </label>
             <textarea
               ref={textRef}
               id={`self-tr-${meta.itemId}`}
-              rows={5}
+              rows={4}
               value={text}
               readOnly={sttActive}
               onChange={(e) => setText(e.target.value)}
@@ -482,7 +497,7 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
               autoCorrect="off"
               autoCapitalize="sentences"
               lang="en"
-              placeholder={sttActive ? 'Habla: el texto aparecerá aquí…' : 'Activa el dictado aquí o escribe lo que dijiste, incluidos titubeos (um, uh) y errores.'}
+              placeholder={sttActive ? 'Habla: el texto aparecerá aquí…' : `Dicta aquí${dictationShortcut ? ` (${dictationShortcut})` : ''} o escribe lo que dijiste, incluidos titubeos (um, uh) y errores.`}
               className="w-full rounded-lg border border-line bg-surface p-3 text-ink"
             />
             {interim && <p className="text-sm italic text-muted">{interim}…</p>}
@@ -500,38 +515,33 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
           <div className="space-y-3">
             {elapsedMs > 0 && <p className="text-xs text-muted">Tiempo de respuesta: {formatClock(elapsedMs)}</p>}
             {micNote && <Alert tone="warn">{micNote}</Alert>}
-            {!text.trim() && !audio && (
-              <Alert tone="warn" title="No se recibió tu respuesta">
-                <p>El cuadro está vacío: el dictado no estaba activo o no escribió nada. Esta página no graba la voz, así que no hay nada que evaluar todavía.</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => textRef.current?.focus()} icon={<Type className="h-4 w-4" />}>
-                    Escribir lo que dije
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={reset} icon={<RotateCcw className="h-4 w-4" />}>
-                    Volver a responder
-                  </Button>
-                </div>
-              </Alert>
-            )}
-            {audio && (
+            {audio ? (
               <div className="space-y-2 rounded-lg border border-line p-3">
                 <p className="flex items-center gap-2 text-sm font-medium text-ink">
-                  <FileAudio className="h-4 w-4 text-accent" aria-hidden /> {audio.source === 'mic' ? 'Audio grabado en esta página' : 'Audio subido'}
+                  <FileAudio className="h-4 w-4 text-accent" aria-hidden /> {audio.source === 'mic' ? 'Audio grabado en esta página' : 'Audio de tu respuesta'}
                 </p>
-                <audio controls src={audio.url} className="w-full" aria-label="Escuchar el audio de tu respuesta" />
+                <audio controls src={audio.url} className="w-full" aria-label="Escuchar el audio que se analizará" />
+                {audio.trim && (
+                  <TrimControls
+                    trim={audio.trim}
+                    onApply={(a, b) => setAudio(trimClip(audio, a, b, false))}
+                    onFull={() => setAudio(trimClip(audio, 0, audio.trim!.total, false))}
+                  />
+                )}
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                  <span className="truncate">{audio.name} · {formatClock(audio.durationMs)} · se analiza en tu navegador, no se envía a Claude</span>
+                  <span className="truncate">{audio.name} · se analiza {formatClock(audio.durationMs)} en tu navegador; el audio no se envía a Claude</span>
                   <Button size="sm" variant="ghost" onClick={() => setAudio(null)} icon={<Trash2 className="h-4 w-4" />}>
                     Quitar
                   </Button>
                 </div>
               </div>
-            )}
-            {!audio && (
-              <details className="rounded-lg border border-dashed border-line p-3 text-sm">
-                <summary className="cursor-pointer text-ink-2">Opcional: añadir un audio grabado con otra app para medir pausas y ritmo</summary>
-                <p className="mt-2 text-xs text-muted">No es necesario para la evaluación. Si te grabaste con la grabadora del móvil o del ordenador, súbelo: se analiza en tu navegador y nunca se envía a Claude.</p>
-                <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm text-ink hover:bg-surface-3">
+            ) : (
+              <div className="space-y-2 rounded-lg border-2 border-dashed border-accent/50 bg-accent-soft/40 p-4">
+                <p className="flex items-center gap-2 font-medium text-ink">
+                  <Gauge className="h-4 w-4 text-accent" aria-hidden /> Sube la grabación de tu respuesta para calificar tu fluidez
+                </p>
+                <p className="text-xs text-muted">MP3, M4A, WAV, OGG o WebM (máx. 25 MB). Si grabaste también la consigna, la página detecta el pitido y analiza solo tu respuesta. El audio se analiza en tu navegador y no se envía a Claude.</p>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-navy-900 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800 dark:bg-sky-400 dark:text-navy-950 dark:hover:bg-sky-300">
                   <Upload className="h-4 w-4" aria-hidden />
                   {checkingAudio ? 'Leyendo audio…' : 'Elegir archivo de audio'}
                   <input
@@ -545,8 +555,8 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
                     }}
                   />
                 </label>
-                {audioError && <p className="mt-2 text-xs text-bad">{audioError}</p>}
-              </details>
+                {audioError && <p className="text-xs text-bad">{audioError}</p>}
+              </div>
             )}
             {saveError && <Alert tone="bad">{saveError}</Alert>}
             <div className="flex flex-wrap gap-2">
@@ -560,10 +570,11 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
               )}
             </div>
             {!text.trim() && audio && (
-              <p className="flex items-center gap-1 text-xs text-warn">
-                <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Sin texto solo se medirán pausas y ritmo; Claude no podrá evaluar el contenido.
+              <p className="flex items-start gap-1 text-xs text-muted">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> Sin texto, Claude calificará solo tu fluidez (ritmo, pausas y entonación). Dicta o escribe lo que dijiste para evaluar también la gramática y el contenido.
               </p>
             )}
+            {!text.trim() && !audio && <p className="text-xs text-muted">Sube tu grabación (fluidez) o escribe lo que dijiste (contenido) para poder evaluar.</p>}
           </div>
         )}
         {phase === 'saved' && (
@@ -588,6 +599,46 @@ export function StaticSpeakingResponse(props: SpeakingRecorderProps) {
           Escuchar la consigna de nuevo
         </Button>
       )}
+    </div>
+  );
+}
+
+/** Ajuste del tramo analizado de un audio subido (detectado por el pitido o manual). */
+function TrimControls({ trim, onApply, onFull }: { trim: { start: number; end: number; total: number; auto: boolean }; onApply: (start: number, end: number) => void; onFull: () => void }) {
+  const [a, setA] = useState(String(trim.start.toFixed(1)));
+  const [b, setB] = useState(String(trim.end.toFixed(1)));
+  useEffect(() => {
+    setA(trim.start.toFixed(1));
+    setB(trim.end.toFixed(1));
+  }, [trim.start, trim.end]);
+  const full = trim.start <= 0.01 && trim.end >= trim.total - 0.01;
+  return (
+    <div className="space-y-2 rounded-lg bg-surface-2 p-2 text-xs text-ink-2">
+      <p>
+        {trim.auto
+          ? `Se detectó el pitido de inicio: se analiza desde ${formatClock(trim.start * 1000)} hasta ${formatClock(trim.end * 1000)} de un audio de ${formatClock(trim.total * 1000)}.`
+          : full
+            ? `Se analiza el audio completo (${formatClock(trim.total * 1000)}). Si incluye la consigna u otros sonidos, recórtalo:`
+            : `Se analiza desde ${formatClock(trim.start * 1000)} hasta ${formatClock(trim.end * 1000)}.`}
+      </p>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-0.5">
+          <span>Inicio (s)</span>
+          <input type="number" min={0} max={trim.total} step={0.1} value={a} onChange={(e) => setA(e.target.value)} className="w-20 rounded border border-line bg-surface px-2 py-1 text-ink" />
+        </label>
+        <label className="flex flex-col gap-0.5">
+          <span>Fin (s)</span>
+          <input type="number" min={0} max={trim.total} step={0.1} value={b} onChange={(e) => setB(e.target.value)} className="w-20 rounded border border-line bg-surface px-2 py-1 text-ink" />
+        </label>
+        <Button size="sm" variant="outline" icon={<Scissors className="h-3.5 w-3.5" />} onClick={() => onApply(Number(a) || 0, Number(b) || trim.total)} disabled={!(Number(b) > Number(a))}>
+          Recortar
+        </Button>
+        {!full && (
+          <Button size="sm" variant="ghost" onClick={onFull}>
+            Usar audio completo
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

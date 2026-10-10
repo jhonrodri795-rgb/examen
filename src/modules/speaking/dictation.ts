@@ -111,3 +111,14 @@ export function looksSpanish(text: string): boolean {
   const accents = /[áéíóúñ¿¡]/i.test(text) ? 1 : 0;
   return es + accents >= 2 && es + accents > en;
 }
+
+/** Grabadora de voz integrada en cada sistema (para medir la fluidez sin el micrófono de la página). */
+export const RECORDER_GUIDES: Record<Platform, string> = {
+  windows: 'app «Grabadora de sonido» (tecla Windows → escribe «Grabadora»). Guarda en Documentos → Grabaciones de sonido.',
+  mac: 'app «Notas de voz» (o QuickTime Player → Archivo → Nueva grabación de audio).',
+  ios: 'app «Notas de voz». Para subirla: Compartir → Guardar en Archivos.',
+  android: 'app «Grabadora» del móvil.',
+  chromeos: 'app «Grabadora» de ChromeOS.',
+  linux: 'cualquier grabadora de audio (p. ej. «Grabadora de sonido» de GNOME).',
+  other: 'la grabadora de voz de tu dispositivo.',
+};

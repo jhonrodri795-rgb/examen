@@ -123,16 +123,20 @@ export async function runPipeline(rec: RecordingRecord, ctx: PipelineContext): P
   // 5. Evaluación
   ctx.onStep?.('evaluate');
   let aiDone = false;
-  if (wantEval && consented && report.transcript) {
+  // Con solo audio (sin texto) se evalúa la fluidez a partir de las medidas de la señal.
+  const audioOnly = !report.transcript && !!report.acoustic && !report.acoustic.quality.mostlySilent;
+  if (wantEval && consented && (report.transcript || audioOnly)) {
     try {
       report.evaluation = await evaluateSpeaking({
         task: ctx.task,
-        transcript: {
-          text: report.transcript.text,
-          provider: selfTranscript ? 'self' : `${report.transcript.provider}/${report.transcript.model}`,
-          lowConfidenceWords: report.transcriptMetrics?.lowConfidenceWords.map((w) => w.word) ?? [],
-          source: selfTranscript ? 'self' : 'asr',
-        },
+        transcript: report.transcript
+          ? {
+              text: report.transcript.text,
+              provider: selfTranscript ? 'self' : `${report.transcript.provider}/${report.transcript.model}`,
+              lowConfidenceWords: report.transcriptMetrics?.lowConfidenceWords.map((w) => w.word) ?? [],
+              source: selfTranscript ? 'self' : 'asr',
+            }
+          : { text: '', provider: 'none', lowConfidenceWords: [], source: 'none' },
         durationSec: audio ? Math.max(0.1, rec.durationMs / 1000) : null,
         acoustic: report.acoustic ? { ...report.acoustic, runs: undefined } : null,
         transcriptMetrics: report.transcriptMetrics ? { ...report.transcriptMetrics } : null,

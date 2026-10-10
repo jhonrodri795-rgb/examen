@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, AlertTriangle, Bot, Calculator, Download, FileJson, Loader2, Pencil, RotateCcw, Trash2, Wand2 } from 'lucide-react';
-import type { Criterion, SpeakingEvaluation } from '@shared/speaking-types';
+import { Activity, AlertTriangle, Bot, Calculator, Download, FileJson, Gauge, Loader2, Pencil, RotateCcw, Trash2, Wand2 } from 'lucide-react';
+import type { Criterion, ProsodyMetrics, SpeakingEvaluation } from '@shared/speaking-types';
 import { useCapabilities, useConsent, useSettings, useToast } from '@/app/context';
 import { Alert, Badge, Button, Card, CardHeader, ConfirmDialog } from '@/components/ui';
 import { downloadBlob, downloadText } from '@/lib/api';
@@ -71,6 +71,66 @@ function SpeechTimeline({ runs, total, current, onSeek }: { runs: [number, numbe
   );
 }
 
+type Tone = 'ok' | 'warn' | 'bad' | 'neutral';
+function band(v: number | null, bands: [number, string, Tone][], top: [string, Tone]): [string, Tone] | null {
+  if (v == null) return null;
+  for (const [lim, label, tone] of bands) if (v < lim) return [label, tone];
+  return top;
+}
+
+/** Fluidez y prosodia estimadas en la señal, con bandas orientativas (no son puntuaciones TOEFL). */
+export function FluencyPanel({ p }: { p: ProsodyMetrics }) {
+  const items: { label: string; value: string; hint: string; band: [string, Tone] | null }[] = [
+    {
+      label: 'Velocidad de habla',
+      value: p.speechRateSps != null ? `${p.speechRateSps} síl/s` : '—',
+      hint: 'Sílabas por segundo incluyendo pausas. Nativo conversacional ≈ 4–5.',
+      band: band(p.speechRateSps, [[2, 'Muy lenta', 'bad'], [2.6, 'Lenta', 'warn'], [3.2, 'Moderada', 'neutral'], [5.5, 'Fluida', 'ok']], ['Muy rápida', 'warn']),
+    },
+    {
+      label: 'Tramos entre pausas',
+      value: p.meanRunSyllables != null ? `${p.meanRunSyllables} sílabas` : '—',
+      hint: 'Sílabas seguidas sin pausa (media). Más largo = discurso más fluido.',
+      band: band(p.meanRunSyllables, [[4, 'Entrecortado', 'bad'], [7, 'Tramos cortos', 'warn']], ['Tramos largos', 'ok']),
+    },
+    {
+      label: 'Variación de tono',
+      value: p.f0RangeSt != null ? `${p.f0RangeSt} semitonos` : '—',
+      hint: 'Rango de entonación (percentiles 10–90). Poco rango suena monótono.',
+      band: band(p.f0RangeSt, [[3, 'Monótona', 'warn'], [5, 'Moderada', 'neutral']], ['Variada', 'ok']),
+    },
+    {
+      label: 'Velocidad de articulación',
+      value: p.articulationRateSps != null ? `${p.articulationRateSps} síl/s` : '—',
+      hint: 'Sílabas por segundo solo mientras hablas (sin pausas).',
+      band: null,
+    },
+  ];
+  return (
+    <div className="space-y-2">
+      <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+        <Gauge className="h-4 w-4 text-accent" aria-hidden /> Fluidez y prosodia (estimación)
+      </p>
+      <dl className="grid grid-cols-2 gap-2">
+        {items.map((it) => (
+          <div key={it.label} className="rounded-lg bg-surface-3 p-2" title={it.hint}>
+            <dt className="text-xs text-muted">{it.label}</dt>
+            <dd className="flex flex-wrap items-center gap-1.5 font-semibold tabular-nums text-ink">
+              {it.value}
+              {it.band && <Badge tone={it.band[1]}>{it.band[0]}</Badge>}
+            </dd>
+            <dd className="mt-0.5 text-[11px] leading-snug text-muted">{it.hint}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-xs text-muted">
+        {p.syllableCount} sílabas detectadas{p.f0MedianHz ? ` · tono medio ${p.f0MedianHz} Hz` : ''}. Estimaciones automáticas por picos de intensidad y tono (aproximadas, ±10–15 %); las bandas son orientativas y no equivalen a puntuaciones oficiales.
+        {p.reliability === 'low' && ' Hay poca voz para estimarlas con fiabilidad.'}
+      </p>
+    </div>
+  );
+}
+
 function reportToMarkdown(task: SpeakingTaskInfo, r: SpeakingReportRecord): string {
   const ev = r.evaluation;
   const a = r.acoustic;
@@ -90,6 +150,7 @@ function reportToMarkdown(task: SpeakingTaskInfo, r: SpeakingReportRecord): stri
   ];
   if (r.editedTranscript) lines.push('', '## Transcripción corregida por el estudiante', r.editedTranscript);
   if (a) lines.push('', '## Métricas acústicas (análisis local)', `- Duración: ${a.totalDurationSec} s · Habla: ${a.speechDurationSec} s · Proporción de habla: ${Math.round(a.phonationRatio * 100)} %`, `- Pausas: ${a.pauseCount} (largas: ${a.longPauseCount}) · Pausa media: ${a.meanPauseSec} s · Más larga: ${a.longestPauseSec} s`, `- Segmento medio de habla: ${a.meanRunSec} s`);
+  if (a?.prosody) lines.push(`- Fluidez (estimación): ${a.prosody.speechRateSps ?? '—'} sílabas/s (articulación ${a.prosody.articulationRateSps ?? '—'}) · tramos de ${a.prosody.meanRunSyllables ?? '—'} sílabas · variación de tono ${a.prosody.f0RangeSt ?? '—'} semitonos${a.prosody.reliability === 'low' ? ' (baja fiabilidad)' : ''}`);
   if (m) lines.push(`- Palabras: ${m.wordCount} · Ritmo: ${m.wordsPerMinute ?? '—'} ppm · Muletillas: ${m.fillerCount}`);
   if (r.repeatAccuracy) lines.push('', `## Precisión de la repetición: ${Math.round(r.repeatAccuracy.accuracy * 100)} %`);
   if (ev) {
@@ -243,9 +304,14 @@ export function SpeakingReportView({
 
       {report && (
         <>
+          {a?.prosody && (
+            <Card className="p-5">
+              <FluencyPanel p={a.prosody} />
+            </Card>
+          )}
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>
-              <CardHeader icon={<Activity className="h-5 w-5" />} title="Métricas acústicas" description="Calculadas en tu navegador a partir de la señal (detección de voz por energía)." />
+              <CardHeader icon={<Activity className="h-5 w-5" />} title="Pausas y señal" description="Calculadas en tu navegador a partir de la señal (detección de voz por energía)." />
               <div className="p-5 text-sm">
                 {a ? (
                   <>
@@ -271,7 +337,7 @@ export function SpeakingReportView({
                       </Alert>
                     )}
                     <p className="mt-3 text-xs text-muted">
-                      Estas métricas describen pausas y continuidad; no miden pronunciación ni inteligibilidad. {m ? '' : 'Sin transcripción no se calculan palabras por minuto ni muletillas.'}
+                      Estas métricas describen pausas, ritmo y entonación; no miden la pronunciación de sonidos ni la inteligibilidad. {m ? '' : 'Sin texto no se calculan palabras por minuto ni muletillas.'}
                     </p>
                   </>
                 ) : hasAudio(rec) ? (

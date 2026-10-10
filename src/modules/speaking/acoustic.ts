@@ -7,6 +7,7 @@
  * solo describe cuándo hay señal de voz y su nivel.
  */
 import type { AcousticMetrics } from '@shared/speaking-types';
+import { analyzeProsody } from './prosody';
 
 export interface VadOptions {
   frameMs: number;
@@ -16,6 +17,8 @@ export interface VadOptions {
   /** Segmentos de voz más cortos que esto se descartan (clics, golpes). */
   minRunMs: number;
   longPauseMs: number;
+  /** Calcular sílabas y tono (por defecto sí). */
+  prosody?: boolean;
 }
 
 export const DEFAULT_VAD: VadOptions = { frameMs: 20, hopMs: 10, minPauseMs: 250, minRunMs: 80, longPauseMs: 1000 };
@@ -104,6 +107,8 @@ export function analyzeSamples(samples: Float32Array, sampleRate: number, opts: 
   const clippingRatio = samples.length ? clipped / samples.length : 0;
 
   const r2 = (x: number) => Math.round(x * 100) / 100;
+  const mostlySilent = speechDurationSec < 0.5 || (totalDurationSec > 0 && speechDurationSec / totalDurationSec < 0.15);
+  const prosody = !mostlySilent && opts.prosody !== false ? analyzeProsody(samples, sampleRate, runs) : undefined;
   return {
     method: 'energy-vad-v1',
     totalDurationSec: r2(totalDurationSec),
@@ -127,8 +132,9 @@ export function analyzeSamples(samples: Float32Array, sampleRate: number, opts: 
       tooQuiet: voicedFrames > 0 ? rmsDbfs < -40 || peakDbfs < -30 : peakDbfs < -40,
       clipping: clippingRatio > 0.001,
       noisy: stationary ? loud > -50 : noiseFloor > -45 && rmsDbfs - noiseFloor < 15,
-      mostlySilent: speechDurationSec < 0.5 || (totalDurationSec > 0 && speechDurationSec / totalDurationSec < 0.15),
+      mostlySilent,
     },
+    ...(prosody ? { prosody } : {}),
   };
 }
 

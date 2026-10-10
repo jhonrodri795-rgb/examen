@@ -364,7 +364,12 @@ function SectionIntro({ attempt, apply }: { attempt: Attempt; apply: ReturnType<
         <div className="space-y-3 rounded-xl border border-line bg-surface p-5">
           <h2 className="text-sm font-semibold text-ink">Cómo responder en esta versión</h2>
           <StaticMicNotice />
-          <DictationCheck />
+          <details className="rounded-lg border border-line bg-surface-2 p-3 text-sm">
+            <summary className="cursor-pointer font-medium text-ink">Opcional: dictar o escribir tus respuestas (para evaluar el contenido)</summary>
+            <div className="mt-2">
+              <DictationCheck className="border-0 bg-transparent p-0" />
+            </div>
+          </details>
         </div>
       )}
       <div className="flex flex-wrap gap-3">

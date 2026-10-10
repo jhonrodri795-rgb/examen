@@ -6,24 +6,23 @@ import { cn, formatClock } from '@/lib/format';
 import { LevelMeter, type MicState, type MicStatus } from '../microphone';
 import { Recorder, type RecordingResult } from '../recorder';
 import { STATIC_BUILD } from '@/lib/runtime';
-import { micPolicy } from '../dictation';
+import { currentPlatform, micPolicy, RECORDER_GUIDES } from '../dictation';
 
 /** Aviso para la versión publicada en claude.ai: cómo se responde a Speaking allí. */
 export function StaticMicNotice() {
   if (!STATIC_BUILD) return null;
   const blocked = micPolicy() === 'blocked';
   return (
-    <Alert tone={blocked ? 'warn' : 'info'} title={blocked ? 'Esta página no puede grabar tu voz' : 'Speaking en la versión publicada'}>
+    <Alert tone="info" title={blocked ? 'Cómo se califica tu Speaking en esta versión' : 'Speaking en la versión publicada'}>
       {blocked ? (
-        <p>El visor de claude.ai no permite que las páginas publicadas usen el micrófono. Tu respuesta cuenta cuando tu voz se convierte en <strong>texto</strong> con el <strong>dictado de tu sistema</strong> (prueba abajo cómo activarlo) o cuando la escribes. No hace falta subir audio.</p>
+        <p>El visor de claude.ai no deja que las páginas publicadas usen el micrófono. Para calificar tu <strong>fluidez</strong> (ritmo, pausas y entonación), grábate con la grabadora de tu dispositivo ({RECORDER_GUIDES[currentPlatform()]}) y sube el audio: se analiza en tu navegador y Claude califica con esas medidas.</p>
       ) : (
-        <p>Puedes intentar grabar con el micrófono de esta página; si el visor lo bloquea, responde con el <strong>dictado de tu sistema</strong> o escribiendo.</p>
+        <p>Puedes grabar con el micrófono de esta página; si el visor lo bloquea, grábate con otra app y sube el audio.</p>
       )}
       <ul className="mt-1 list-disc pl-5">
-        <li>Claude evalúa el contenido (uso de la lengua, desarrollo y cumplimiento de la tarea) con tu cuenta de claude.ai.</li>
-        <li>Opcional: sube un audio grabado con otra app para medir pausas y ritmo. La pronunciación no se puntúa.</li>
+        <li>Opcional: dicta o escribe lo que dices para que Claude evalúe también la gramática, el vocabulario y el contenido.</li>
+        <li>La pronunciación de sonidos concretos no se puntúa aquí: requiere la app local con Azure Speech (ver README).</li>
       </ul>
-      <p className="mt-1">Para grabar con transcripción automática del audio, ejecuta la aplicación en tu ordenador (<code>npm install</code> y <code>npm run dev</code>, ver README).</p>
     </Alert>
   );
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SPEAKING_SYSTEM, WRITING_SYSTEM, SELF_TRANSCRIPT_LIMITATION, type SpeakingEvalInput, type WritingEvalInput } from '@shared/evaluation';
+import { AUDIO_ONLY_LIMITATION, SPEAKING_SYSTEM, WRITING_SYSTEM, SELF_TRANSCRIPT_LIMITATION, type SpeakingEvalInput, type WritingEvalInput } from '@shared/evaluation';
 import { SampleEvalError, __resetSampleForTests, extractJson, sampleEvaluateSpeaking, sampleEvaluateWriting, sampleEvaluatorInfo, type SampleFn } from './claude-sample';
 
 const essay = 'Dear Professor Lee, I am writing to ask whether I could submit my lab report two days late because I was sick last week. I have attached a note from the clinic. Thank you for your understanding.';
@@ -124,6 +124,29 @@ describe('evaluación de Speaking con transcripción propia', () => {
     expect(ev.overall).toBe(3); // (3 + 2.5 + 4) / 3 = 3.17 → 3
     expect(ev.limitations).toContain(SELF_TRANSCRIPT_LIMITATION);
     expect(ev.limitations.join(' ')).toMatch(/pronunciación/);
+  });
+
+  it('solo con audio evalúa la fluidez y deja el resto como no evaluable', async () => {
+    const fn = fakeSample(reply);
+    __resetSampleForTests(fn);
+    const acoustic = { pauseCount: 3, longPauseCount: 1, prosody: { speechRateSps: 3.4, meanRunSyllables: 9, f0RangeSt: 5.2, reliability: 'ok' } };
+    const ev = await sampleEvaluateSpeaking({ ...input, transcript: { text: '', provider: 'none', lowConfidenceWords: [], source: 'none' }, durationSec: 40, acoustic });
+    expect(fn.mock.calls[0]![0]).toContain('<transcript source="none"');
+    expect(fn.mock.calls[0]![0]).toContain('speechRateSps');
+    const by = Object.fromEntries(ev.criteria.map((c) => [c.criterion, c]));
+    expect(by.delivery!.score).toBe(3);
+    expect(by.languageUse!.evaluable).toBe(false); // las citas no pueden verificarse sin texto
+    expect(by.taskFulfillment!.evaluable).toBe(false);
+    expect(ev.overall).toBe(3);
+    expect(ev.improvedResponse).toBeNull();
+    expect(ev.limitations).toContain(AUDIO_ONLY_LIMITATION);
+  });
+
+  it('sin texto ni audio no llama a Claude', async () => {
+    const fn = fakeSample(reply);
+    __resetSampleForTests(fn);
+    await expect(sampleEvaluateSpeaking({ ...input, transcript: { text: '', provider: 'none', lowConfidenceWords: [], source: 'none' } })).rejects.toMatchObject({ code: 'transcript_too_short' });
+    expect(fn).not.toHaveBeenCalled();
   });
 
   it('con métricas acústicas reales la fluidez sí es evaluable', async () => {

@@ -77,6 +77,31 @@ export interface AcousticMetrics {
   /** Segmentos de habla detectados [inicio, fin] en segundos. */
   runs: [number, number][];
   quality: { tooQuiet: boolean; clipping: boolean; noisy: boolean; mostlySilent: boolean };
+  /** Fluidez y prosodia estimadas en la señal (ausente en informes antiguos). */
+  prosody?: ProsodyMetrics;
+}
+
+/** Medidas aproximadas de fluidez y prosodia calculadas en el navegador. */
+export interface ProsodyMetrics {
+  method: 'syllable-nuclei-f0-v1';
+  /** Núcleos silábicos detectados (picos de intensidad sonoros). */
+  syllableCount: number;
+  /** Sílabas por segundo sobre el tiempo entre el inicio y el fin del habla (incluye pausas). */
+  speechRateSps: number | null;
+  /** Sílabas por segundo sobre el tiempo de habla (sin pausas). */
+  articulationRateSps: number | null;
+  /** Sílabas medias entre pausas (≥ 0,25 s). */
+  meanRunSyllables: number | null;
+  /** Proporción de tramas de habla con tono detectado. */
+  voicedRatio: number;
+  f0MedianHz: number | null;
+  /** Rango de tono entre los percentiles 10 y 90, en semitonos. */
+  f0RangeSt: number | null;
+  f0StdSt: number | null;
+  /** Desviación de la intensidad de las sílabas (dB): contraste de acento. */
+  intensityVarDb: number | null;
+  /** 'low' si hay poca voz o poco tono detectado: interpretar con cautela. */
+  reliability: 'ok' | 'low';
 }
 
 /** Métricas derivadas de la transcripción (y su alineación temporal si existe). */

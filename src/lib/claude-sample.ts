@@ -187,7 +187,8 @@ export async function sampleEvaluateWriting(input: WritingEvalInput, opts: Sampl
 }
 
 export async function sampleEvaluateSpeaking(input: SpeakingEvalInput, opts: SampleCallOptions = {}): Promise<SpeakingEvaluation> {
-  if (wordCount(input.transcript.text) < 3) throw new SampleEvalError('transcript_too_short', 'La respuesta es demasiado breve para evaluarla.');
+  const audioOnly = input.transcript.source === 'none' && !!input.acoustic;
+  if (!audioOnly && wordCount(input.transcript.text) < 3) throw new SampleEvalError('transcript_too_short', 'La respuesta es demasiado breve para evaluarla.');
   if (input.transcript.text.length > 8000) throw new SampleEvalError('text_too_long', 'La respuesta supera 8000 caracteres.');
   const { value, model } = await ask(SPEAKING_SYSTEM, speakingUserMessage(input), SpeakingSchema, opts);
   return postProcessSpeaking(value, input, { provider: 'claude.ai', model });
