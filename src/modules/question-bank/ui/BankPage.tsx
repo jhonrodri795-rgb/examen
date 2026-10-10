@@ -55,6 +55,8 @@ function Preview({ set }: { set: ContentSet }) {
   );
 }
 
+const PAGE = 60;
+
 export function BankPage() {
   const { bank, custom, reload } = useBank();
   const { settings } = useSettings();
@@ -67,6 +69,9 @@ export function BankPage() {
   const [topic, setTopic] = useState('all');
   const [skill, setSkill] = useState('all');
   const [q, setQ] = useState('');
+  /** Por defecto se ocultan las simulaciones numeradas para no adelantar su contenido. */
+  const [origin, setOrigin] = useState('general');
+  const [limit, setLimit] = useState(PAGE);
   const [selected, setSelected] = useState<string[]>([]);
   const [preview, setPreview] = useState<ContentSet | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
@@ -77,6 +82,7 @@ export function BankPage() {
     () =>
       bank.sets.filter(
         (s) =>
+          (origin === 'all' || (origin === 'general' ? !s.form : s.form === Number(origin))) &&
           (section === 'all' || s.section === section) &&
           (task === 'all' || s.task === task) &&
           (difficulty === 'all' || s.difficulty === difficulty) &&
@@ -84,8 +90,16 @@ export function BankPage() {
           (skill === 'all' || itemsOfSet(s).some((i) => i.skill === skill)) &&
           (!q.trim() || setSearchText(s).includes(q.trim().toLowerCase())),
       ),
-    [bank, section, task, difficulty, topic, skill, q],
+    [bank, origin, section, task, difficulty, topic, skill, q],
   );
+  const forms = useMemo(() => [...new Set(bank.sets.map((s) => s.form).filter((f): f is number => typeof f === 'number'))].sort((a, b) => a - b), [bank]);
+  // Al cambiar los filtros se vuelve a la primera página.
+  const filterKey = [origin, section, task, difficulty, topic, skill, q].join('|');
+  const [lastKey, setLastKey] = useState(filterKey);
+  if (lastKey !== filterKey) {
+    setLastKey(filterKey);
+    setLimit(PAGE);
+  }
 
   const packs = [...new Set(custom.map((c) => c.pack))];
 
@@ -161,19 +175,33 @@ export function BankPage() {
 
       <Card className="p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <div className="lg:col-span-2">
+          <div className="sm:col-span-2 lg:col-span-2">
             <label htmlFor="bank-q" className="mb-1 block text-xs font-medium text-muted">Buscar</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
               <input id="bank-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Palabra clave…" className="h-10 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-sm text-ink" />
             </div>
           </div>
+          <Select
+            id="bank-origin"
+            label="Origen"
+            value={origin}
+            onChange={setOrigin}
+            options={[
+              { value: 'general', label: 'Banco general' },
+              { value: 'all', label: 'Todo (incluye simulaciones)' },
+              ...forms.map((f) => ({ value: String(f), label: `Simulación n.º ${f}` })),
+            ]}
+          />
           <Select id="bank-section" label="Sección" value={section} onChange={(v) => { setSection(v); setTask('all'); }} options={[{ value: 'all', label: 'Todas' }, ...(['reading', 'listening', 'writing', 'speaking'] as SectionId[]).map((s) => ({ value: s, label: sectionName(s) }))]} />
           <Select id="bank-task" label="Tarea" value={task} onChange={setTask} options={[{ value: 'all', label: 'Todas' }, ...tasksForSection.map((t) => ({ value: t, label: TASK_LABEL[t] ?? t }))]} />
           <Select id="bank-diff" label="Dificultad" value={difficulty} onChange={setDifficulty} options={[{ value: 'all', label: 'Todas' }, ...Object.entries(DIFF_LABEL).map(([v, l]) => ({ value: v, label: l }))]} />
           <Select id="bank-topic" label="Tema" value={topic} onChange={setTopic} options={[{ value: 'all', label: 'Todos' }, ...[...new Set(bank.sets.map((s) => s.topic))].sort().map((t) => ({ value: t, label: TOPIC_LABEL[t] ?? t }))]} />
-          <Select className="sm:col-span-2 lg:col-span-2" id="bank-skill" label="Tipo de pregunta" value={skill} onChange={setSkill} options={[{ value: 'all', label: 'Todos' }, ...[...new Set(bank.items.map((i) => i.skill))].map((k) => ({ value: k, label: SKILL_LABEL[k] }))]} />
+          <Select className="sm:col-span-2 lg:col-span-3" id="bank-skill" label="Tipo de pregunta" value={skill} onChange={setSkill} options={[{ value: 'all', label: 'Todos' }, ...[...new Set(bank.items.map((i) => i.skill))].map((k) => ({ value: k, label: SKILL_LABEL[k] }))]} />
         </div>
+        {origin !== 'general' && (
+          <p className="mt-3 text-xs text-muted">Ver el contenido de una simulación antes de hacerla le quita valor como prueba.</p>
+        )}
       </Card>
 
       {selected.length > 0 && (
@@ -190,7 +218,7 @@ export function BankPage() {
         <EmptyState icon={<Library className="h-8 w-8" />} title="Sin resultados" description="Prueba con otros filtros." />
       ) : (
         <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((s) => {
+          {filtered.slice(0, limit).map((s) => {
             const items = itemsOfSet(s);
             const on = selected.includes(s.id);
             return (
@@ -206,6 +234,7 @@ export function BankPage() {
                   <Badge tone="brand">{sectionName(s.section)}</Badge>
                   <Badge tone={s.difficulty === 'hard' ? 'warn' : s.difficulty === 'easy' ? 'ok' : 'accent'}>{DIFF_LABEL[s.difficulty]}</Badge>
                   <Badge>{TOPIC_LABEL[s.topic] ?? s.topic}</Badge>
+                  {s.form && <Badge tone="accent">Simulación n.º {s.form}</Badge>}
                   {s.source && s.source !== 'builtin' && <Badge tone="accent">{s.source}</Badge>}
                 </div>
                 <p className="mt-2 text-[11px] text-muted">ID: {s.id}</p>
@@ -216,6 +245,12 @@ export function BankPage() {
             );
           })}
         </ul>
+      )}
+      {filtered.length > limit && (
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-xs text-muted">Mostrando {limit} de {filtered.length} sets</p>
+          <Button variant="secondary" onClick={() => setLimit((l) => l + PAGE)}>Mostrar más</Button>
+        </div>
       )}
 
       <Dialog open={!!preview} onOpenChange={(v) => !v && setPreview(null)} title={preview?.title ?? ''} description={preview ? `${TASK_LABEL[preview.task]} · ${DIFF_LABEL[preview.difficulty]} · ${TOPIC_LABEL[preview.topic] ?? preview.topic}` : undefined} size="xl">
