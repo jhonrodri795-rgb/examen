@@ -53,21 +53,21 @@ export const sets: ListeningSet[] = [
   cr('f14-ls-cr-shared-spreadsheet', 'easy', 'female', "Why don't we put all our lab measurements in a shared spreadsheet?", [
     'Good idea. Then we can all edit it.',
     'Because we measured them twice.',
-    'The spreadsheet has three tabs.',
+    'The spreadsheet already has three tabs.',
     'I shared my lunch with her today.',
   ], 0, '"Why don\'t we…?" es una sugerencia, no una pregunta sobre causas. Por eso "Good idea. Then we can all edit it" es la reacción adecuada; "Because we measured them twice" interpreta mal la función y responde como si preguntaran "por qué".'),
   cr('f14-ls-cr-party-noise', 'easy', 'female', "I'm so sorry about all the noise from my party last night.", [
-    'Yes, the party starts at nine tonight.',
+    "Yes, the party starts at nine o'clock tonight.",
     "No, I didn't make any noise at all.",
     "Don't worry about it. It wasn't that bad.",
     'It was a really noisy part of town.',
   ], 2, 'Ante una disculpa se suele quitar importancia: "Don\'t worry about it. It wasn\'t that bad." "I didn\'t make any noise" confunde quién hizo el ruido, y "noisy part of town" solo imita el sonido de "party".', 'daily-life'),
   cr('f14-ls-cr-elective', 'easy', 'male', 'Which elective would you recommend for first-year students?', [
     'I elected a new class president.',
-    "Yes, I'd definitely recommend it.",
+    "Yes, I'd definitely recommend it to them.",
     "Intro to Film. The workload's light.",
     'I was a first-year student once.',
-  ], 2, 'Piden una recomendación concreta ("Which elective…?"); solo "Intro to Film" nombra una asignatura y da un motivo. "Yes, I\'d definitely recommend it" contesta como si fuera una pregunta de sí/no.'),
+  ], 2, 'Piden una recomendación concreta ("Which elective…?"); solo "Intro to Film" nombra una asignatura y da un motivo. "Yes, I\'d definitely recommend it to them" contesta como si fuera una pregunta de sí/no.'),
   cr('f14-ls-cr-new-kitten', 'easy', 'female', 'Guess what? I just adopted a kitten from the animal shelter!', [
     "That's great! What's its name?",
     "I'll adopt the new policy soon.",
@@ -77,41 +77,41 @@ export const sets: ListeningSet[] = [
 
   // ---------- Listen and Choose a Response: medium ----------
   cr('f14-ls-cr-online-calendar', 'medium', 'male', 'Maybe we should use a shared online calendar to schedule our group meetings.', [
-    'I scheduled it for the online course.',
+    'I scheduled it for the online course last term.',
     'Our group has four members this term.',
-    "The wall calendar is from last year.",
+    "The wall calendar in our room is from last year.",
     'Sure. Then we can see when people are free.',
   ], 3, 'Es una sugerencia ("Maybe we should…"); la respuesta adecuada la acepta y explica la ventaja: "Then we can see when people are free". Las demás repiten palabras ("online", "group", "calendar") sin reaccionar a la propuesta.'),
   cr('f14-ls-cr-which-saturday', 'medium', 'female', 'Wait, when you said Saturday, did you mean this Saturday or next Saturday?', [
-    'Yes, I meant it.',
+    'Yes, I meant exactly what I said.',
     "Next one. I'm away this weekend.",
     'I said it on Saturday morning.',
     'Saturdays are usually quiet.',
-  ], 1, 'Es una pregunta de alternativa ("this Saturday or next Saturday?"), así que hay que elegir una opción: "Next one. I\'m away this weekend." "Yes, I meant it" responde como si fuera una pregunta de sí/no.'),
+  ], 1, 'Es una pregunta de alternativa ("this Saturday or next Saturday?"), así que hay que elegir una opción: "Next one. I\'m away this weekend." "Yes, I meant exactly what I said" responde como si fuera una pregunta de sí/no.'),
   cr('f14-ls-cr-exam-curve', 'medium', 'male', 'I bet Professor Lyons will curve the exam grades. Almost everyone struggled with it.', [
     'I hope so. That last part was tough.',
-    'I bet five dollars on the game.',
+    'I bet five dollars on the game last night.',
     'The road curves near the stadium.',
     'Everyone in the class has an exam.',
   ], 0, 'Es una predicción ("I bet… will curve the grades"); lo natural es reaccionar a ella: "I hope so. That last part was tough." "I bet five dollars" y "The road curves" son trampas de sonido con "bet" y "curve".'),
   cr('f14-ls-cr-admissions-test', 'medium', 'female', 'How should I start preparing for the graduate admissions test?', [
     'I started graduate school last fall.',
-    'The test takes about four hours.',
-    'Take a practice test to find your weak spots.',
+    'The test takes about four hours to finish.',
+    'Try a practice test to find weak spots.',
     'I should have prepared dinner earlier.',
-  ], 2, 'Pide un consejo ("How should I start preparing…?"); la respuesta adecuada da uno: "Take a practice test to find your weak spots." La duración del examen responde a otra pregunta.'),
+  ], 2, 'Pide un consejo ("How should I start preparing…?"); la respuesta adecuada da uno: "Try a practice test to find weak spots." La duración del examen responde a otra pregunta.'),
   cr('f14-ls-cr-image-credits', 'medium', 'male', "Don't forget to credit the sources of the images on your slides.", [
-    "I'll pay by credit card instead.",
+    "I'll pay by credit card instead this time.",
     "Thanks. I'll add a caption to each one.",
-    'I forgot my slides on the bus.',
+    'I forgot my slides on the bus this morning.',
     'The images are very colorful.',
   ], 1, 'Es un recordatorio; lo natural es agradecerlo y decir qué se hará: "Thanks. I\'ll add a caption to each one." "Credit card" juega con otro significado de "credit".'),
   cr('f14-ls-cr-pool-reopens', 'medium', 'female', "The campus pool reopens next week, doesn't it?", [
-    'Yes, I swam there last week.',
+    'Yes, I swam there almost every day last week.',
     'The pool is fifty meters long.',
     "No, I didn't reopen it.",
     "Yes, on Monday. The repairs are done.",
-  ], 3, 'La pregunta coletilla ("doesn\'t it?") pide confirmar una información: "Yes, on Monday. The repairs are done." "I swam there last week" está en pasado y no confirma la reapertura; "I didn\'t reopen it" confunde el sujeto.'),
+  ], 3, 'La pregunta coletilla ("doesn\'t it?") pide confirmar una información: "Yes, on Monday. The repairs are done." "I swam there almost every day last week" está en pasado y no confirma la reapertura; "I didn\'t reopen it" confunde el sujeto.'),
 
   // ---------- Listen and Choose a Response: hard ----------
   cr('f14-ls-cr-paragraph-support', 'hard', 'male', 'This paragraph is interesting, but it could use a bit more support.', [
@@ -127,23 +127,23 @@ export const sets: ListeningSet[] = [
     'Yes, I wrote two letters home.',
   ], 0, 'Aunque no es una pregunta directa, la hablante pide la información de forma indirecta ("I can\'t recall whether…"). "It does. The website says two." se la da. "I\'d recommend applying" solo imita el sonido de "recommendation".'),
   cr('f14-ls-cr-add-video', 'hard', 'male', 'Sure, we can add the video, if we have any time left at the end.', [
-    "Great, I'll make it our opening.",
+    "Great, I'll make it the opening of our talk.",
     'The end of the video is the best.',
     'I had time left after the exam.',
     "Fair enough. Let's do the slides first.",
-  ], 3, 'El compañero acepta a medias: el vídeo irá solo "if we have any time left at the end". La respuesta natural acepta esa prioridad: "Fair enough. Let\'s do the slides first." Convertir el vídeo en la apertura ("make it our opening") ignora su reticencia.'),
+  ], 3, 'El compañero acepta a medias: el vídeo irá solo "if we have any time left at the end". La respuesta natural acepta esa prioridad: "Fair enough. Let\'s do the slides first." Convertir el vídeo en la apertura ("make it the opening of our talk") ignora su reticencia.'),
   cr('f14-ls-cr-late-text', 'hard', 'female', "You could have at least texted me that you'd be late.", [
     'Yes, I could text you later tonight.',
     "You're right. Sorry, my phone died.",
     'At least three people were late.',
     "I'll probably be late tomorrow too.",
-  ], 1, '"You could have at least…" expresa una queja, no una posibilidad. Lo adecuado es reconocerla y disculparse: "You\'re right. Sorry, my phone died." "I could text you later tonight" interpreta "could" como posibilidad futura.'),
+  ], 1, '"You could have at least texted me…" expresa una queja implícita, no una posibilidad. La respuesta adecuada reconoce el error y se disculpa: "You\'re right. Sorry, my phone died." La opción "I could text you later tonight" interpreta "could" como una posibilidad futura y no responde a la queja.'),
   cr('f14-ls-cr-writing-center', 'hard', 'male', 'You know, the writing center does free consultations for essays like yours.', [
     "Good idea. I'll book a session there.",
-    'Yes, I know where the center is.',
+    'Yes, I know where the writing center is.',
     'My essay is free to read online.',
     'I consulted the dictionary already.',
-  ], 0, 'Con "You know, the writing center does free consultations…" el hablante sugiere indirectamente pedir ayuda. La respuesta adecuada acepta la sugerencia: "I\'ll book a session there." "I know where the center is" se queda en el sentido literal.'),
+  ], 0, 'Con "You know, the writing center does free consultations…" el hablante sugiere indirectamente pedir ayuda. La respuesta adecuada acepta la sugerencia: "I\'ll book a session there." "I know where the writing center is" se queda en el sentido literal.'),
   cr('f14-ls-cr-cheap-textbooks', 'hard', 'female', "I didn't buy new books this term. My cousin sold me his old textbooks for half price.", [
     'Half of the textbooks are in the library.',
     'Why did he sell you only half of them?',
@@ -323,7 +323,7 @@ export const sets: ListeningSet[] = [
         options: [
           'Whether the university should build a new gym',
           "How to collect data on students' gym visits",
-          'Why part-time jobs lower students’ grades',
+          "Why part-time jobs lower students' grades",
           'Why a pattern in data may not prove a cause',
         ],
         answer: [3],
@@ -458,7 +458,7 @@ export const sets: ListeningSet[] = [
         options: [
           "A volcanologist's research in Iceland and Chile",
           'A new course in the earth sciences department',
-          'Changes to the location and entry rules for a talk',
+          'Changes in where and how to attend a talk',
           "The cancellation of Thursday's guest lecture",
         ],
         answer: [2],
@@ -473,7 +473,7 @@ export const sets: ListeningSet[] = [
         options: [
           'Room 105 is being repaired this week.',
           'More people want to attend than expected.',
-          'The speaker asked for a larger stage.',
+          'The speaker requested a larger lecture hall.',
           'The time of the lecture has changed.',
         ],
         answer: [1],
@@ -573,7 +573,7 @@ export const sets: ListeningSet[] = [
     form: 14,
     section: 'listening',
     task: 'academic-talk',
-    title: 'Cane Toads in Australia',
+    title: 'The Cane Toad Invasion',
     topic: 'environment',
     difficulty: 'easy',
     context: 'Listen to part of a lecture in an environmental science class.',
@@ -607,7 +607,7 @@ export const sets: ListeningSet[] = [
         prompt: 'Why did the toads fail to control the beetles?',
         options: [
           'The beetles were poisonous to the toads.',
-          "The beetles were mostly out of the toads' reach.",
+          "Most beetles were out of the toads' reach.",
           'The toads were released in the wrong season.',
           'The toads would eat only the beetle larvae.',
         ],
@@ -623,7 +623,7 @@ export const sets: ListeningSet[] = [
         options: [
           'To name an animal that eats cane beetles',
           'To show that some animals resist toxins',
-          'To give an example of a predator harmed by toads',
+          'To show a predator harmed by the toads',
           'To explain how the toads reached Australia',
         ],
         answer: [2],
