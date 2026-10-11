@@ -93,6 +93,7 @@ Antes de definir la estructura se comprobó el formato vigente (ETS: nuevo TOEFL
 
 **Simulación y práctica**
 - Simulación completa, simulación breve, práctica por sección, entrenamiento por tipo de tarea y práctica personalizada desde el banco.
+- **20 simulaciones completas distintas** (n.º 1–20), cada una con sus propios textos, audios y tareas de las cuatro secciones. «Simulación completa» abre la siguiente que no has hecho; en la configuración puedes elegir cualquiera, continuar la que está en curso o pedir una prueba aleatoria del banco general. El panel muestra cuáles has hecho y tu mejor banda en cada una.
 - **Modo examen** (soluciones ocultas hasta entregar, Listening de una sola escucha y sin retroceso) y **modo práctica** (comprobar cada respuesta con explicación, Listening flexible, pausa, tiempo extendido ×1,5 o sin límite, preparación extra opcional en Speaking).
 - Reading y Listening **adaptativos**: el módulo 2 se ensambla según los aciertos del módulo 1 (ruta superior/inferior).
 - Temporizadores independientes por módulo/tarea basados en marcas de tiempo (exactos aunque la pestaña esté en segundo plano), avisos a 5 y 1 minuto, fin automático al agotarse.
@@ -244,6 +245,22 @@ Cada pregunta tiene identificador único, sección, tarea, habilidad (tipo de pr
 2. **Desde la interfaz:** Banco de preguntas → **Importar pack JSON** (array de sets u objeto `{ "name", "sets" }`). Se valida con las mismas reglas y se guarda en IndexedDB. El botón **Plantilla** descarga un ejemplo.
 
 Sintaxis de Complete the Words: `{{prefijo|letras-que-faltan}}`, por ejemplo `{{vis|its}}`.
+
+### Simulaciones completas (formularios 1–20)
+
+Cada simulación numerada vive en `src/modules/question-bank/data/forms/fNN/` (`reading.ts`, `listening.ts`, `writing.ts`, `speaking.ts`) y lleva `form: NN` en cada set. Contiene exactamente lo necesario para el módulo 1 y **las dos rutas** del módulo 2 adaptativo (`FORM_REQUIREMENTS` en `src/modules/question-bank/forms.ts`), así que la prueba no repite ni toma contenido de otra simulación:
+
+| Sección | Por simulación |
+|---|---|
+| Reading | 3 Complete the Words (fácil/media/difícil), 5 Read in Daily Life, 4 Academic Passages |
+| Listening | 18 Choose a Response, 3 Conversations, 3 Announcements, 3 Academic Talks |
+| Writing | 10 Build a Sentence, 1 Email, 1 Academic Discussion |
+| Speaking | 1 Listen and Repeat (7 frases), 1 Interview (4 preguntas) |
+
+- Al ensamblar con `config.form`, el motor usa solo ese formulario; si faltara algo, completa con el banco general y lo indica en el intento. Sin formulario (práctica o «Aleatoria»), el contenido de las simulaciones queda al final de la prioridad para no gastarlo.
+- El explorador del banco oculta por defecto el contenido de las simulaciones (filtro «Origen»).
+- Validación: `npx vitest run src/modules/question-bank/forms.test.ts` comprueba recuentos por tarea y dificultad, longitudes, número de huecos y preguntas, ids y títulos únicos entre formularios, explicaciones en español y el reparto de la posición de la respuesta correcta (10–40 % por letra). `FORM=7 SECTION=reading` limita la comprobación a una parte.
+- Todo el contenido es original (no procede de exámenes de ETS).
 
 ---
 
