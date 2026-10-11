@@ -189,7 +189,8 @@ describe('formularios de simulación completa', () => {
       const dupTitles: string[] = [];
       for (const s of [...baseSets, ...all]) {
         if (s.task === 'choose-response' || s.task === 'build-sentence') continue;
-        const k = `${s.task}:${s.title.toLowerCase()}`;
+        // Títulos únicos entre tareas: un mismo tema no debe repetirse (p. ej. lectura en una simulación y clase en otra).
+        const k = s.title.toLowerCase();
         if (titles.has(k)) dupTitles.push(`${s.title} (${titles.get(k)} / ${s.id})`);
         titles.set(k, s.id);
       }
