@@ -17,6 +17,7 @@ import {
 } from '../engine';
 import { remainingMs } from '../timer';
 import type { Attempt } from '../types';
+import { attemptTitle } from '../forms-progress';
 import { PageRenderer } from './PageRenderer';
 import { useAttempt, useNow } from './useAttempt';
 
@@ -514,7 +515,7 @@ export function ExamRunnerPage() {
         <div className="flex min-w-0 items-center gap-3">
           <BookOpen className="h-5 w-5 shrink-0 text-sky-300" aria-hidden />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{attempt.blueprint.name}</p>
+            <p className="truncate text-sm font-semibold">{attemptTitle(attempt)}</p>
             <p className="text-[11px] text-sky-200">{attempt.config.mode === 'exam' ? 'Modo examen' : 'Modo práctica'}</p>
           </div>
         </div>
