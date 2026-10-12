@@ -36,7 +36,10 @@ export const sets: WritingSet[] = [
     'Con "ago" se usa el pasado simple ("I visited … two months ago"), nunca el presente perfecto: "I have visited … ago" es incorrecto. La expresión temporal también puede ir al principio: "Two months ago I visited my grandparents in Peru".',
     {
       distractors: ['I have visited'],
-      acceptedOrders: [['two months ago', 'I visited', 'my grandparents', 'in Peru']],
+      acceptedOrders: [
+        ['two months ago', 'I visited', 'my grandparents', 'in Peru'],
+        ['I visited', 'my grandparents', 'two months ago', 'in Peru'],
+      ],
       topic: 'daily-life',
     }),
   bs('f16-wr-bs-sandwich', 'easy', 'Coworker', "Why aren't you eating your sandwich?",
@@ -62,7 +65,11 @@ export const sets: WritingSet[] = [
   bs('f16-wr-bs-safe-neighborhood', 'medium', 'New neighbor', 'Is this neighborhood safe at night?',
     ['Although', "it's usually quiet,", 'you should', 'avoid walking alone', 'after midnight'], '.',
     'La concesión con "Although" va primero y se separa con coma ("Although it\'s usually quiet,"); después viene el consejo con "you should". "Avoid" exige gerundio ("avoid walking"), no infinitivo ("avoid to walk").',
-    { distractors: ['avoid to walk alone'], topic: 'daily-life' }),
+    {
+      distractors: ['avoid to walk alone'],
+      acceptedOrders: [['Although', "it's usually quiet,", 'after midnight', 'you should', 'avoid walking alone']],
+      topic: 'daily-life',
+    }),
   bs('f16-wr-bs-club-room', 'hard', 'Club president', 'We need to book a room for the club meeting.',
     ['Can you', 'remind me', 'how far', 'in advance', 'we have to', 'reserve it'], '?',
     'Pregunta indirecta tras "Can you remind me": la parte incrustada usa orden afirmativo ("how far in advance we have to reserve it"), sin el auxiliar "do". "Do we have to" sería el orden de una pregunta directa.',
@@ -74,7 +81,11 @@ export const sets: WritingSet[] = [
   bs('f16-wr-bs-london-offer', 'hard', 'Friend', "Why didn't you take the job offer in London?",
     ['If I', 'had accepted it,', 'I would', 'be living', 'far from my family', 'right now'], '.',
     'Condicional mixto: condición en el pasado ("If I had accepted it") con resultado en el presente ("I would be living … right now"). "Have accepted" no es correcto tras "If I" en este tipo de condicional.',
-    { distractors: ['have accepted it,'], topic: 'daily-life' }),
+    {
+      distractors: ['have accepted it,'],
+      acceptedOrders: [['If I', 'had accepted it,', 'right now', 'I would', 'be living', 'far from my family']],
+      topic: 'daily-life',
+    }),
 
   // ---------- Write an Email ----------
   {
@@ -97,7 +108,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      'Dear IT Help Desk,\n\nI am writing because I cannot log in to the online course system. The problem started yesterday at around 6 p.m. Every time I enter my username and password, the message "Authentication failed: account not recognized" appears, and I am sent back to the login page.\n\nI have already tried several solutions. I reset my password twice, cleared my browser\'s cache, and tried logging in from two different browsers and from my phone, but the same error appears every time. My university email works normally, so I am sure my username is correct.\n\nThis is urgent because I have a major assignment for my statistics course due tomorrow at 11:59 p.m., and it can only be submitted through the system. Could you please check my account as soon as possible? I can be reached at 555-0172 at any time.\n\nThank you for your help.\n\nSincerely,\nDaniel Ortiz',
+      'Dear IT Help Desk,\n\nI am writing because I cannot log in to the online course system. The problem started yesterday at around 6 p.m. Every time I enter my username and password, the message "Authentication failed: account not recognized" appears.\n\nI have already tried several solutions. I reset my password twice, cleared my browser\'s cache, and tried logging in from two different browsers and from my phone, but the same error appears every time.\n\nThis is urgent because I have a major assignment for my statistics course due tomorrow at 11:59 p.m., and it can only be submitted through the system. Could you please check my account as soon as possible? I can be reached at 555-0172 at any time.\n\nThank you for your help.\n\nSincerely,\nDaniel Ortiz',
   },
 
   // ---------- Academic Discussion ----------

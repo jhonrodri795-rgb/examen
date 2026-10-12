@@ -4,6 +4,7 @@ import type { AcademicPassageSet, ChoiceQuestion, CompleteWordsSet, DailyLifeSet
 import { gapItemId, parseCloze } from '@/modules/question-bank/items';
 import { Badge, Button } from '@/components/ui';
 import { cn } from '@/lib/format';
+import { gapMatches } from '@/modules/scoring/spelling';
 
 const GENRE: Record<DailyLifeSet['genre'], string> = {
   email: 'Correo electrónico', notice: 'Aviso', 'text-message': 'Mensajes', schedule: 'Horario', advertisement: 'Anuncio', memo: 'Memorando', webpage: 'Página web', menu: 'Menú',
@@ -108,7 +109,7 @@ export function ClozeView({
           if (!seg.gap) return <Fragment key={i}>{seg.text}</Fragment>;
           const id = gapItemId(set.id, seg.gap.index);
           const val = values[id] ?? '';
-          const ok = val.trim().toLowerCase() === seg.gap.missing.toLowerCase() || val.trim().toLowerCase() === seg.gap.word.toLowerCase();
+          const ok = gapMatches(val, seg.gap);
           if (revealed && ok) correctCount++;
           return (
             <span key={i} className="inline-flex items-baseline whitespace-nowrap">

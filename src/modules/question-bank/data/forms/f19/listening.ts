@@ -500,12 +500,12 @@ export const sets: ListeningSet[] = [
       {
         speaker: 'Announcer',
         voice: 'female',
-        text: 'Good afternoon. This is the Office of Scholarships with changes to renewal requirements, starting next academic year. First, to keep your scholarship, you must complete at least twenty-four credits per year, up from the current twenty. Summer courses will count toward this total. Second, the minimum cumulative GPA will rise from 2.8 to 3.0.',
+        text: 'Good afternoon. This is the Office of Scholarships with changes to renewal requirements, starting next academic year. First, to keep your scholarship, you must complete at least twenty-four credits per year, up from the current twenty. Summer courses will count toward this total. Second, the minimum cumulative GPA will rise from two point eight to three point zero.',
       },
       {
         speaker: 'Announcer',
         voice: 'female',
-        text: 'Students who fall below 3.0 will not lose their award immediately; instead, they will be placed on probation for one semester to raise their average. Finally, if you lose your scholarship because of a medical or family emergency, you may file an appeal. Appeals must be submitted within thirty days of your notice and should include supporting documents, such as a letter from a doctor. Advisors will hold drop-in sessions every Wednesday this month.',
+        text: 'Students who fall below three point zero will not lose their award immediately; instead, they will be placed on probation for one semester to raise their average. Finally, if you lose your scholarship because of a medical or family emergency, you may file an appeal. Appeals must be submitted within thirty days of your notice and should include supporting documents, such as a letter from a doctor. Advisors will hold drop-in sessions every Wednesday this month.',
       },
     ],
     questions: [

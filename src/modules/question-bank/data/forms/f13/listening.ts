@@ -162,7 +162,7 @@ export const sets: ListeningSet[] = [
     difficulty: 'easy',
     context: 'Listen to a conversation between a student and a bookstore clerk.',
     script: [
-      { speaker: 'Student', voice: 'female', text: "Hi. I need the textbook for Biology 101, and I see there's a used copy and a rental option. Which one makes more sense?" },
+      { speaker: 'Student', voice: 'female', text: "Hi. I need the textbook for Introduction to Biology, and I see there's a used copy and a rental option. Which one makes more sense?" },
       { speaker: 'Clerk', voice: 'male', text: 'Well, it depends on whether you want to keep it. A used copy costs eighty-five dollars. Renting it for the semester is forty-two.' },
       { speaker: 'Student', voice: 'female', text: "Renting is half the price. What's the catch?" },
       { speaker: 'Clerk', voice: 'male', text: "There are a few rules. You can highlight in a rental, but please don't write notes in the margins or tear out any pages. If the book comes back with writing in it, we charge you the difference between the rental price and the used price." },

@@ -77,3 +77,24 @@ describe('escalas', () => {
     expect(accuracyToRubric(0)).toBe(0);
   });
 });
+
+describe('ortografía británica en Complete the Words', () => {
+  it('acepta variantes seguras y no otras palabras', async () => {
+    const { gapMatches, spellingVariants } = await import('./spelling');
+    const gap = (word: string) => ({ prefix: word.slice(0, Math.floor(word.length / 2)), missing: word.slice(Math.floor(word.length / 2)), word });
+    expect(gapMatches('tallize', gap('recrystallize'))).toBe(true);
+    expect(gapMatches('tallise', gap('recrystallize'))).toBe(true);
+    expect(gapMatches('recrystallise', gap('recrystallize'))).toBe(true);
+    expect(gapMatches('viour', gap('behavior'))).toBe(true);
+    expect(gapMatches('lour', gap('color'))).toBe(true);
+    expect(gapMatches('elled', gap('traveled'))).toBe(true);
+    expect(gapMatches('tre', gap('center'))).toBe(true);
+    expect(gapMatches('  VIOR ', gap('behavior'))).toBe(true);
+    // No convierte palabras en otras distintas
+    expect(spellingVariants('size')).toEqual(['size']);
+    expect(spellingVariants('filed')).toEqual(['filed']);
+    expect(spellingVariants('for')).toEqual(['for']);
+    expect(gapMatches('lled', gap('filed'))).toBe(false);
+    expect(gapMatches('', gap('color'))).toBe(false);
+  });
+});

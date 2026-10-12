@@ -19,7 +19,7 @@ export const sets: SpeakingSet[] = [
     },
     sentences: [
       { id: 'f17-sp-lr-farmers-market-1', text: 'Thanks for volunteering this morning.', responseSec: 8 },
-      { id: 'f17-sp-lr-farmers-market-2', text: "Let's start by setting up tents.", responseSec: 8 },
+      { id: 'f17-sp-lr-farmers-market-2', text: "Let's start by setting up the tents.", responseSec: 8 },
       { id: 'f17-sp-lr-farmers-market-3', text: 'Please put a weight on every tent leg.', responseSec: 9 },
       { id: 'f17-sp-lr-farmers-market-4', text: 'Maria and Josh will staff the information booth today.', responseSec: 10 },
       { id: 'f17-sp-lr-farmers-market-5', text: 'The recycling bins should go next to the main entrance.', responseSec: 10 },

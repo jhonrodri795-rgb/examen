@@ -260,7 +260,9 @@ Cada simulación numerada vive en `src/modules/question-bank/data/forms/fNN/` (`
 - Al ensamblar con `config.form`, el motor usa solo ese formulario; si faltara algo, completa con el banco general y lo indica en el intento. Sin formulario (práctica o «Aleatoria»), el contenido de las simulaciones queda al final de la prioridad para no gastarlo.
 - El explorador del banco oculta por defecto el contenido de las simulaciones (filtro «Origen»).
 - Validación: `npx vitest run src/modules/question-bank/forms.test.ts` comprueba recuentos por tarea y dificultad, longitudes, número de huecos y preguntas, ids y títulos únicos entre formularios, explicaciones en español y el reparto de la posición de la respuesta correcta (10–40 % por letra). `FORM=7 SECTION=reading` limita la comprobación a una parte.
-- Todo el contenido es original (no procede de exámenes de ETS).
+- Todo el contenido es original (no procede de exámenes de ETS): 1060 sets y 2680 ítems puntuables en total (53 sets y 134 ítems por simulación), sin temas académicos repetidos entre simulaciones.
+- Revisión de claves: un revisor independiente resolvió a ciegas cada pregunta, cada texto de huecos y cada Build a Sentence de las 20 simulaciones (sin ver la clave) y se comparó con ella; se corrigieron las discrepancias, las opciones ambiguas, los órdenes alternativos válidos de Build a Sentence, datos imprecisos y textos que la síntesis de voz leería mal.
+- En Complete the Words se acepta tanto la ortografía estadounidense como la británica (p. ej. *behavior/behaviour*, *recrystallize/recrystallise*), y escribir solo las letras que faltan o la palabra completa.
 
 ---
 

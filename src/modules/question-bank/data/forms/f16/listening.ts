@@ -304,7 +304,7 @@ export const sets: ListeningSet[] = [
       { speaker: 'Student', voice: 'female', text: "Hi. I'm finishing my thesis on nineteenth-century landscape painting, and I want to include images from a few museum websites. But the graduate school says all theses are published online in the university's repository. Is that a problem?" },
       { speaker: 'Librarian', voice: 'male', text: "It might be, depending on the images. The first question is whether the paintings themselves are still under copyright. Works from the nineteenth century are almost certainly in the public domain, so the paintings aren't the issue." },
       { speaker: 'Student', voice: 'female', text: 'Then why would there be a problem at all?' },
-      { speaker: 'Librarian', voice: 'male', text: "Because some museums claim rights in their photographs of those paintings, or they attach terms of use to their websites. In the U.S., courts have generally said that an exact photo of a flat, public-domain painting doesn't create a new copyright. But a website's terms can still limit what you're allowed to do with the files you download." },
+      { speaker: 'Librarian', voice: 'male', text: "Because some museums claim rights in their photographs of those paintings, or they attach terms of use to their websites. In the United States, courts have generally said that an exact photo of a flat, public-domain painting doesn't create a new copyright. But a website's terms can still limit what you're allowed to do with the files you download." },
       { speaker: 'Student', voice: 'female', text: 'So I have to check each museum separately?' },
       { speaker: 'Librarian', voice: 'male', text: "Yes. The good news is that many major museums now have open-access programs. They release images of public-domain works for any use, including publication. Look for a label that says 'open access' or 'public domain' next to the image." },
       { speaker: 'Student', voice: 'female', text: 'Okay. But I also have two paintings from the 1950s. Those are probably still protected, right?' },
@@ -440,7 +440,7 @@ export const sets: ListeningSet[] = [
       {
         speaker: 'Announcer',
         voice: 'male',
-        text: "Attention, students. The Study Abroad Office is excited to announce a new exchange partnership with a leading university in Seoul, South Korea, beginning next fall. Through this program, you can spend one semester in Seoul while paying your regular tuition here. Courses are taught in English, so no knowledge of Korean is required, although a free introductory language course will be offered before departure. To learn more, come to our information session next Tuesday at five p.m. in Room 210 of the International Center. Two students from Seoul who are studying on our campus this year will talk about daily life at their home university. Applications for the fall semester are due March first, and you'll need a GPA of at least 3.0. Please note that the program can accept only six students each semester.",
+        text: "Attention, students. The Study Abroad Office is excited to announce a new exchange partnership with a leading university in Seoul, South Korea, beginning next fall. Through this program, you can spend one semester in Seoul while paying your regular tuition here. Courses are taught in English, so no knowledge of Korean is required, although a free introductory language course will be offered before departure. To learn more, come to our information session next Tuesday at five p.m. in Room 210 of the International Center. Two students from Seoul who are studying on our campus this year will talk about daily life at their home university. Applications for the fall semester are due March first, and you'll need a grade point average of at least three point oh. Please note that the program can accept only six students each semester.",
       },
     ],
     questions: [
@@ -472,7 +472,7 @@ export const sets: ListeningSet[] = [
         ],
         answer: [3],
         explanation:
-          'El requisito explícito es "you\'ll need a GPA of at least 3.0". El coreano no es necesario ("no knowledge of Korean is required") y la sesión informativa es una invitación, no una obligación.',
+          'El requisito explícito es "you\'ll need a grade point average of at least three point oh" (un promedio mínimo de 3.0). El coreano no es necesario ("no knowledge of Korean is required") y la sesión informativa es una invitación, no una obligación.',
       },
       {
         id: 'f16-ls-an-korea-exchange-q3',

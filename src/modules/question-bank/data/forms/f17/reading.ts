@@ -12,7 +12,7 @@ export const sets: ReadingSet[] = [
     topic: 'art',
     difficulty: 'easy',
     text:
-      'Before paint could be bought in stores, artists had to prepare their own colors from natural materials. The {{old|est}} known {{pig|ments}} were {{ma|de}} from {{col|ored}} clay {{a|nd}} crushed {{ro|ck}}. Artists {{gro|und}} these {{mate|rials}} into {{fi|ne}} powder, {{th|en}} mixed them with a binder such as egg, oil, or animal glue so the color would stick to a wall or panel. Plants offered other shades: the roots of the madder plant produced a deep red, and the leaves of the indigo plant gave a strong blue. Some mineral colors, such as the blue made from lapis lazuli, were more expensive than gold.',
+      'Before paint could be bought in stores, artists had to prepare their own colors from natural materials. The {{old|est}} known {{pigm|ents}} were {{ma|de}} from {{col|ored}} clay {{a|nd}} crushed {{ro|ck}}. Artists {{gro|und}} these {{mate|rials}} into {{fi|ne}} powder, {{th|en}} mixed them with a binder such as egg, oil, or animal glue so the color would stick to a wall or panel. Plants offered other shades: the roots of the madder plant produced a deep red, and the leaves of the indigo plant gave a strong blue. Some mineral colors, such as the blue made from lapis lazuli, were more expensive than gold.',
     note: '"The oldest known" es una colocación fija con superlativo; "were made from" es pasiva en pasado. Observa la secuencia "ground… then mixed" (primero molían, luego mezclaban).',
   },
   {

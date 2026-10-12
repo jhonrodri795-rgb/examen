@@ -24,7 +24,7 @@ export const sets: ReadingSet[] = [
     topic: 'economics',
     difficulty: 'medium',
     text:
-      'Economies of scale explain why large producers can often sell goods more cheaply than small ones. {{Ma|ny}} costs, {{su|ch}} as {{mach|inery}} and {{fac|tory}} rent, {{rem|ain}} fixed {{regar|dless}} of {{out|put}}. A {{lar|ger}} factory {{spr|eads}} these {{co|sts}} over more products, so each unit becomes cheaper to make. Big firms can also buy raw materials in bulk and negotiate lower prices with suppliers. However, growth has limits: if a company becomes too large, coordination problems may push costs up again.',
+      'Economies of scale explain why large producers can often sell goods more cheaply than small ones. {{So|me}} costs, {{su|ch}} as {{mach|inery}} and {{fac|tory}} rent, {{rem|ain}} fixed {{regar|dless}} of {{out|put}}. A {{lar|ger}} factory {{spr|eads}} these {{co|sts}} over more products, so each unit becomes cheaper to make. Big firms can also buy raw materials in bulk and negotiate lower prices with suppliers. However, growth has limits: if a company becomes too large, coordination problems may push costs up again.',
     note: '"Regardless of" (independientemente de) y "such as" (como, por ejemplo) son expresiones fijas muy frecuentes en textos de economía; "spreads" concuerda con el sujeto singular "A larger factory".',
   },
   {

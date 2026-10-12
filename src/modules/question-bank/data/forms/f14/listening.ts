@@ -169,8 +169,8 @@ export const sets: ListeningSet[] = [
       { speaker: 'Student', voice: 'male', text: "Old quizzes? That's perfect. I didn't even know that folder existed." },
       { speaker: 'Teaching Assistant', voice: 'female', text: "Not many people do. And if you get stuck, come to my office hours. But be careful: they've moved. I'm not in the chemistry building anymore." },
       { speaker: 'Student', voice: 'male', text: 'Oh, where are you now?' },
-      { speaker: 'Teaching Assistant', voice: 'female', text: 'Room 214 in Hadley Hall, the building next to the library. The chemistry building is being renovated, so all the TAs were moved over there. Same times, though: Wednesdays from two to four.' },
-      { speaker: 'Student', voice: 'male', text: "Hadley Hall, room 214, Wednesdays from two to four. Got it. I'll go through the old quizzes tonight and come by if I have questions." },
+      { speaker: 'Teaching Assistant', voice: 'female', text: 'Room two-fourteen in Hadley Hall, the building next to the library. The chemistry building is being renovated, so all the TAs were moved over there. Same times, though: Wednesdays from two to four.' },
+      { speaker: 'Student', voice: 'male', text: "Hadley Hall, room two-fourteen, Wednesdays from two to four. Got it. I'll go through the old quizzes tonight and come by if I have questions." },
       { speaker: 'Teaching Assistant', voice: 'female', text: "Sounds like a good plan. Bring your work so we can see where you're getting stuck." },
     ],
     questions: [
@@ -441,7 +441,7 @@ export const sets: ListeningSet[] = [
       {
         speaker: 'Announcer',
         voice: 'male',
-        text: "Attention, please. This is an update from the Department of Earth Sciences about Thursday's guest lecture by Dr. Helena Strand, a volcanologist who studies eruptions in Iceland and Chile. Because so many people have expressed interest, the talk has been moved from Room 105 in the Science Center to the Morrison Auditorium, which seats four hundred. The time hasn't changed: it still begins at seven p.m.",
+        text: "Attention, please. This is an update from the Department of Earth Sciences about Thursday's guest lecture by Doctor Helena Strand, a volcanologist who studies eruptions in Iceland and Chile. Because so many people have expressed interest, the talk has been moved from Room one-oh-five in the Science Center to the Morrison Auditorium, which seats four hundred. The time hasn't changed: it still begins at seven p.m.",
       },
       {
         speaker: 'Announcer',
@@ -515,7 +515,7 @@ export const sets: ListeningSet[] = [
       {
         speaker: 'Announcer',
         voice: 'male',
-        text: 'Please also learn the warning signs of heat exhaustion: heavy sweating, dizziness, headache, nausea, and cold, clammy skin. If a teammate shows any of these signs, move them to a cool or shaded area right away, give them water, and alert a coach or athletic trainer. If someone becomes confused or faints, call 911 immediately, because this may be heat stroke, which is a medical emergency.',
+        text: 'Please also learn the warning signs of heat exhaustion: heavy sweating, dizziness, headache, nausea, and cold, clammy skin. If a teammate shows any of these signs, move them to a cool or shaded area right away, give them water, and alert a coach or athletic trainer. If someone becomes confused or faints, call nine-one-one immediately, because this may be heat stroke, which is a medical emergency.',
       },
     ],
     questions: [

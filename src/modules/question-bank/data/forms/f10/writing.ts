@@ -50,7 +50,7 @@ export const sets: WritingSet[] = [
   bs('f10-wr-bs-welcome-speech', 'medium', 'campus-life', 'Classmate', 'Who is the student giving the welcome speech?',
     ["She's the", 'junior', 'who won', 'the poetry prize', 'last spring'], '.',
     'Oración de relativo con "who" para personas: "the junior who won the poetry prize". "Which" se usa para cosas, por eso sobra "which won".',
-    { distractors: ['which won'], acceptedOrders: [["She's the", 'junior', 'who won', 'last spring', 'the poetry prize']] }),
+    { distractors: ['which won'] }),
   bs('f10-wr-bs-group-survey', 'medium', 'campus-life', 'Classmate', 'Did you finish the group survey yet?',
     ['Almost, but', 'I need to', 'proofread it', 'before sending', 'it to everyone'], '.',
     'Tras una preposición como "before" se usa el gerundio (-ing): "before sending it". "Before send" es incorrecto porque la preposición no admite el infinitivo sin "to".',

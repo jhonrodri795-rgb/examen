@@ -49,8 +49,11 @@ export const sets: WritingSet[] = [
     { distractors: ['has to'], topic: 'daily-life' }),
   bs('f15-wr-bs-professor-kim', 'medium', 'Classmate', 'How long has Professor Kim taught at this university?',
     ['As far as I know,', 'she has', 'taught', 'in the biology department', 'since 2009'], '.',
-    'Presente perfecto ("she has taught") con "since" + año para indicar el punto de inicio. "For" se usa con periodos ("for ten years"), no con un año, por eso "for 2009" es incorrecto.',
-    { distractors: ['for 2009'] }),
+    'Presente perfecto ("she has taught") con "since" + año para indicar el punto de inicio. "For" se usa con periodos ("for ten years"), no con un año, por eso "for 2009" es incorrecto. También se acepta "she has taught since 2009 in the biology department".',
+    {
+      distractors: ['for 2009'],
+      acceptedOrders: [['As far as I know,', 'she has', 'taught', 'since 2009', 'in the biology department']],
+    }),
   bs('f15-wr-bs-sold-car', 'medium', 'Coworker', 'Why did you sell your car?',
     ['It took me', 'almost an hour', 'every day', 'to find', 'a parking spot', 'near campus'], '.',
     'Estructura "it took + persona + tiempo + to + infinitivo": "It took me almost an hour every day to find a parking spot". "For finding" no es correcto aquí. "Every day" también puede ir al final de la frase.',
@@ -101,7 +104,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      "Dear Mr. Hayes,\n\nI hope you are doing well. My name is Lucía Torres, and I took your chemistry class two years ago. You may remember my project on water quality in the Riverside neighborhood, which won second place at the regional science fair.\n\nI am now applying for the Greenfield Science Scholarship, which covers tuition for students who plan to major in a science field. I am applying because I want to study environmental chemistry, and the award would let me focus on research instead of working two part-time jobs.\n\nThe scholarship requires a letter from a teacher who knows my work well, and I immediately thought of you. The deadline is March 15. If you are willing to help, I would be glad to send my résumé, my personal statement, or a copy of my science fair report.\n\nThank you very much for considering my request.\n\nSincerely,\nLucía Torres",
+      "Dear Mr. Hayes,\n\nI hope you are doing well. My name is Lucía Torres, and I took your chemistry class two years ago. You may remember my project on local water quality, which won second place at the regional science fair.\n\nI am now applying for the Greenfield Science Scholarship, which covers tuition for future science majors. I am applying because I want to study environmental chemistry, and the award would let me focus on research instead of working two part-time jobs.\n\nThe scholarship requires a letter from a teacher who knows my work well, and I immediately thought of you. The deadline is March 15. If you are willing to help, I would be glad to send my résumé, my personal statement, or my science fair report.\n\nThank you for considering my request.\n\nSincerely,\nLucía Torres",
   },
 
   // ---------- Academic Discussion ----------

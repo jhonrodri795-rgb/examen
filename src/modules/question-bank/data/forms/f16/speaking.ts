@@ -21,7 +21,7 @@ export const sets: SpeakingSet[] = [
       { id: 'f16-sp-lr-makerspace-2', text: 'Safety training is required for everyone.', responseSec: 8 },
       { id: 'f16-sp-lr-makerspace-3', text: 'You can book printers on the library website.', responseSec: 9 },
       { id: 'f16-sp-lr-makerspace-4', text: 'Each student may print for three hours a day.', responseSec: 10 },
-      { id: 'f16-sp-lr-makerspace-5', text: 'Please upload your design as an STL or OBJ file.', responseSec: 10 },
+      { id: 'f16-sp-lr-makerspace-5', text: 'Please upload your design file at least one day in advance.', responseSec: 10 },
       { id: 'f16-sp-lr-makerspace-6', text: 'Printing material costs ten cents per gram, paid with your student card.', responseSec: 12 },
       { id: 'f16-sp-lr-makerspace-7', text: 'Safety goggles must be worn whenever you remove supports or sand a finished print.', responseSec: 13 },
     ],

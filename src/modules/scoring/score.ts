@@ -1,4 +1,5 @@
 import { clozeGaps, findChoiceQuestion } from '../question-bank/items';
+import { gapMatches } from './spelling';
 import type { BankItem, ContentSet } from '../question-bank/types';
 import type { BandCurve, ScoringSpec } from '../exam-engine/blueprint-types';
 import type { Response, RubricRating } from '../exam-engine/types';
@@ -60,8 +61,7 @@ export function scoreItem(item: BankItem, set: ContentSet, response: Response | 
       const index = Number(item.id.split('-g').pop()) - 1;
       const gap = clozeGaps(set.text)[index];
       if (!gap) return { status: 'incorrect', earned: 0, max };
-      const v = norm(response.value);
-      const ok = v === norm(gap.missing) || v === norm(gap.word);
+      const ok = gapMatches(norm(response.value), gap);
       return ok ? { status: 'correct', earned: max, max } : { status: 'incorrect', earned: 0, max };
     }
     case 'order': {

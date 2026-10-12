@@ -258,7 +258,7 @@ export const sets: ReadingSet[] = [
         id: 'f16-rd-dl-exam-timetable-q1',
         kind: 'single',
         skill: 'inference',
-        prompt: 'A student takes classes that meet MWF at 8:00, MWF at 11:00, and TTh at 9:30. What should the student do?',
+        prompt: 'A student takes classes that meet MWF at 8:00, MWF at 11:00, and TTh at 9:30. The student does not want to take three exams in one day. What should the student do?',
         options: [
           'Take all three exams on Monday as scheduled',
           'Ask to move the 8:00 a.m. exam to Friday',
@@ -267,7 +267,7 @@ export const sets: ReadingSet[] = [
         ],
         answer: [2],
         explanation:
-          'Las tres clases tienen examen el lunes 9 (8:00, 1:00 y 6:00). Según la regla 2, "A student with three exams on the same day may reschedule the second of the three", es decir, el de la 1:00 p.m. El de las 8:00 es el primero, no el segundo.',
+          'Las tres clases tienen examen el lunes 9 (8:00, 1:00 y 6:00). Según la regla 2, "A student with three exams on the same day may reschedule the second of the three", es decir, el de la 1:00 p.m. El de las 8:00 es el primero, no el segundo. Hacer los tres el lunes está permitido, pero no evita tener tres exámenes el mismo día, que es lo que el estudiante quiere.',
       },
       {
         id: 'f16-rd-dl-exam-timetable-q2',
@@ -525,7 +525,7 @@ export const sets: ReadingSet[] = [
         prompt: 'According to paragraph 2, what did studies of deaf signers find?',
         options: [
           'Late learners caught up after decades of daily use.',
-          'Early starters used its grammar more accurately.',
+          'Early starters used sign language grammar more accurately.',
           'Hearing parents taught sign language better than schools did.',
           'Teenagers learned sign language faster than young children.',
         ],

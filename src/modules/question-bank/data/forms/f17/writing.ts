@@ -99,7 +99,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      'Dear Front Desk Manager,\n\nI stayed at your hotel from October 2 to October 4 in Room 512, and the reservation was under my name, Daniel Ortega. After I checked out on Sunday morning, I realized that I had left my jacket in the room.\n\nIt is a dark green rain jacket with a hood and a black zipper. I believe I hung it on the hook behind the bathroom door, although it might also be in the closet near the entrance. Unfortunately, my house keys are in the right pocket, so finding it is quite urgent for me.\n\nCould you please let me know whether your housekeeping staff has found it? If so, I would be grateful if you could mail it to my home address. I will gladly pay the shipping costs by credit card or any other method you prefer.\n\nThank you very much for your help.\n\nSincerely,\nDaniel Ortega',
+      'Dear Front Desk Manager,\n\nI stayed in Room 512 at your hotel from October 2 to October 4 under the name Daniel Ortega. After checking out, I realized that I had left my jacket in the room.\n\nIt is a dark green rain jacket with a hood and a black zipper. I believe I hung it on the hook behind the bathroom door, although it might be in the closet near the entrance. Unfortunately, my house keys are in the right pocket, so this is quite urgent.\n\nCould you please let me know whether your staff has found it and how I can get it back? I would be grateful if you could mail it to my home address. I will gladly pay the shipping costs by whatever method you prefer.\n\nThank you for your help.\n\nSincerely,\nDaniel Ortega',
   },
 
   // ---------- Academic Discussion ----------

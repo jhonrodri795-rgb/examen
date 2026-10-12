@@ -41,8 +41,8 @@ export const sets: WritingSet[] = [
     { distractors: ["didn't had"], topic: 'daily-life' }),
   bs('f18-wr-bs-part-time-job', 'easy', 'Classmate', 'Is it difficult to find a part-time job here?',
     ['It is', 'usually easy', 'to find', 'weekend work', 'at restaurants downtown'], '.',
-    'Estructura "It is + adjetivo + to + infinitivo": "It is usually easy to find weekend work". Tras el adjetivo va el infinitivo con "to", no el gerundio ("finding"). El adverbio "usually" se coloca antes del adjetivo.',
-    { distractors: ['finding'], topic: 'daily-life' }),
+    'Estructura "It is + adjetivo + to + infinitivo": "It is usually easy to find weekend work". Tras el adjetivo va el infinitivo con "to"; "for find" es un calco del español ("fácil para encontrar") y es incorrecto. El adverbio "usually" se coloca antes del adjetivo.',
+    { distractors: ['for find'], topic: 'daily-life' }),
   bs('f18-wr-bs-food-hall', 'medium', 'Friend', 'Have you been to the new food hall downtown?',
     ['Yes,', 'I have', 'already tried', 'the noodle stand', 'on the first floor'], '.',
     'Presente perfecto con "already": "I have already tried". "Already" va entre el auxiliar "have" y el participio "tried". "Already try" no es correcto porque el presente perfecto exige el participio pasado.',
@@ -57,8 +57,8 @@ export const sets: WritingSet[] = [
     { distractors: ['you would'] }),
   bs('f18-wr-bs-old-job', 'medium', 'Friend', 'Why did you leave your old job?',
     ['Even though', 'the pay', 'was good,', 'the hours', 'were too long', 'for me'], '.',
-    'Concesión con "even though" (aunque) + oración completa: "Even though the pay was good, the hours were too long for me". "Despite" es una preposición y no puede ir seguida de sujeto + verbo ("despite the pay was good" es incorrecto).',
-    { distractors: ['Despite'], topic: 'daily-life' }),
+    'Concesión con "even though" (aunque) + oración completa: "Even though the pay was good, the hours were too long for me". "Despite" es una preposición y no puede ir seguida de sujeto + verbo ("despite the pay was good" es incorrecto). También se acepta colocar "for me" al inicio de la oración principal ("…, for me the hours were too long").',
+    { distractors: ['Despite'], acceptedOrders: [['Even though', 'the pay', 'was good,', 'for me', 'the hours', 'were too long']], topic: 'daily-life' }),
   bs('f18-wr-bs-bus-schedule', 'hard', 'Classmate', 'The bus schedule changed again this semester.',
     ['Do you know', 'when', 'the new', 'weekend routes', 'are going', 'to start', 'running'], '?',
     'Pregunta indirecta tras "Do you know when…": la cláusula mantiene el orden afirmativo sujeto + verbo ("when the new weekend routes are going to start running"), sin invertir ni añadir el auxiliar "do". Por eso "when do the new routes start" sería incorrecto aquí.',
@@ -93,7 +93,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      'Dear Mr. Ortega,\n\nMy name is Laura Kim, and I recently moved into an apartment on Birch Avenue, just two blocks from the community garden. I would very much like to rent a plot for the coming season.\n\nAt my previous home, I grew tomatoes and herbs in containers on my balcony for three years, so I know how to care for plants, although I have never worked with a full plot.\n\nThis season, I would like to grow tomatoes, peppers, and lettuce, and perhaps a row of sunflowers along one edge.\n\nCould you tell me how much the rental fee is and when it must be paid? I would also like to know whether there is a water tap near the plots. Finally, are tools shared among members, or should I bring my own?\n\nThank you for your time. I look forward to hearing from you.\n\nBest regards,\nLaura Kim',
+      'Dear Mr. Ortega,\n\nMy name is Laura Kim, and I recently moved to Birch Avenue, just two blocks from the community garden. I would like to rent a plot for the coming season.\n\nFor three years, I grew tomatoes and herbs in containers on my balcony, so I know how to care for plants, although I have never worked a full plot.\n\nThis season, I would like to grow tomatoes, peppers, and lettuce, and perhaps a row of sunflowers along one edge.\n\nCould you tell me how much the rental fee is and when it must be paid? I would also like to know whether there is a water tap near the plots. Finally, are tools shared among members, or should I bring my own?\n\nThank you, and I look forward to hearing from you.\n\nBest regards,\nLaura Kim',
   },
 
   // ---------- Academic Discussion ----------

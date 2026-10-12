@@ -33,7 +33,7 @@ export const sets: WritingSet[] = [
   // ---------- Build a Sentence ----------
   bs('f14-wr-bs-first-day-job', 'easy', 'Friend', 'How was your first day at the new job?',
     ['I met', 'my new coworkers', 'and they', 'showed me around', 'the office'], '.',
-    'Dos oraciones en pasado simple unidas con "and": "I met my new coworkers and they showed me around the office". Ambos verbos van en pasado; "shows" (presente) no concuerda con el relato de ayer.',
+    'Dos oraciones en pasado simple unidas con "and": "I met my new coworkers and they showed me around the office". Ambos verbos van en pasado; "shows" (presente) no concuerda con el relato en pasado.',
     { distractors: ['shows me around'], topic: 'daily-life' }),
   bs('f14-wr-bs-tired-brother', 'easy', 'Neighbor', 'Why is your brother so tired today?',
     ['He always', 'stays up late', 'when he has', 'an exam'], '.',
@@ -68,8 +68,8 @@ export const sets: WritingSet[] = [
     { distractors: ['Have divided'] }),
   bs('f14-wr-bs-bookstore-closing', 'hard', 'Friend', 'Did you hear that the bookstore is closing?',
     ['Yes,', 'the owner', 'told me', 'that she', 'had been', 'losing money', 'for years'], '.',
-    'En estilo indirecto con "told me", el tiempo retrocede: "I have been losing money" pasa a "she had been losing money" (pasado perfecto continuo). "Has been" no concuerda con el verbo introductor en pasado.',
-    { distractors: ['has been'], topic: 'daily-life' }),
+    'En estilo indirecto con "told me", el tiempo retrocede: "I have been losing money" pasa a "she had been losing money" (pasado perfecto continuo). "Have been" es incorrecto: con el sujeto "she" nunca se usa "have", y además el verbo introductor en pasado pide "had been".',
+    { distractors: ['have been'], topic: 'daily-life' }),
 
   // ---------- Write an Email ----------
   {
@@ -92,7 +92,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      "Dear Ms. Thompson,\n\nI am writing to explain why I missed this week's biology lab on Wednesday. On Tuesday night I developed a high fever, and the doctor at the campus health center told me to stay home for two days so that I would not infect anyone else. I would be happy to send you a doctor's note if you need one.\n\nI know the lab sessions are required, so I would like to make up the experiment as soon as possible. Would it be possible for me to join another section later this week, or is there a different makeup option?\n\nAlso, could you please send me the handout for the experiment and the data that my lab group collected? I will need both to complete the lab report that is due next week.\n\nThank you very much for your help.\n\nBest regards,\nDaniel Ruiz",
+      "Dear Ms. Thompson,\n\nI am writing to explain why I missed this week's biology lab on Wednesday. On Tuesday night I developed a high fever, and the doctor at the campus health center told me to stay home for two days. I would be happy to send you a doctor's note if you need one.\n\nI know the lab sessions are required, so I would like to make up the experiment as soon as possible. Would it be possible for me to join another section later this week, or is there a different makeup option?\n\nAlso, could you please send me the handout for the experiment and the data that my lab group collected? I will need both to complete the lab report that is due next week.\n\nThank you very much for your help.\n\nBest regards,\nDaniel Ruiz",
   },
 
   // ---------- Academic Discussion ----------
