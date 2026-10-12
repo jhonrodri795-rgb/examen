@@ -437,17 +437,17 @@ export const sets: ListeningSet[] = [
     title: 'Overnight Wi-Fi Upgrade',
     topic: 'campus-life',
     difficulty: 'medium',
-    context: "Listen to an announcement from the university's IT services office.",
+    context: "Listen to an announcement from the university's information technology office.",
     script: [
       {
         speaker: 'Announcer',
         voice: 'male',
-        text: "Good afternoon. This is a message from IT Services. This Thursday night, campus Wi-Fi will be unavailable from eleven p.m. until about five a.m. while we upgrade the wireless network. During that time, wired connections in the library and the computer labs will continue to work normally. After the upgrade, the old network, CampusNet, will be replaced by a more secure network called CampusNet-Secure.",
+        text: "Good afternoon. This is a message from the Information Technology office. This Thursday night, campus Wi-Fi will be unavailable from eleven p.m. until about five a.m. while we upgrade the wireless network. During that time, wired connections in the library and the computer labs will continue to work normally. After the upgrade, the old network, CampusNet, will be replaced by a more secure network called CampusNet-Secure.",
       },
       {
         speaker: 'Announcer',
         voice: 'male',
-        text: "The first time you connect, you'll need to log in with your full university email address instead of just your username, and you'll be asked to approve the login in the authentication app on your phone. So please make sure that app is installed before Thursday. If you have trouble connecting on Friday morning, the IT help desk in the library will open an hour early, at seven a.m.",
+        text: "The first time you connect, you'll need to log in with your full university email address instead of just your username, and you'll be asked to approve the login in the authentication app on your phone. So please make sure that app is installed before Thursday. If you have trouble connecting on Friday morning, the technology help desk in the library will open an hour early, at seven a.m.",
       },
     ],
     questions: [
@@ -460,7 +460,7 @@ export const sets: ListeningSet[] = [
           'A network shutdown and a new way of logging in',
           'New rules for using the computer labs at night',
           "A problem with students' university email accounts",
-          'The opening of a new IT help desk in the library',
+          'The opening of a new technology help desk in the library',
         ],
         answer: [0],
         explanation:
@@ -511,7 +511,7 @@ export const sets: ListeningSet[] = [
       {
         speaker: 'Announcer',
         voice: 'female',
-        text: "Attention, please. This is the Office of Emergency Management. Tomorrow, Wednesday, at ten a.m., we will test the campus alert system. You'll hear sirens outdoors and receive a text message and an email marked TEST. No action is needed during the test, but we'd like to use this opportunity to remind you what real alerts mean.",
+        text: "Attention, please. This is the Office of Emergency Management. Tomorrow, Wednesday, at ten a.m., we will test the campus alert system. You'll hear sirens outdoors and receive a text message and an email, both clearly marked as a test. No action is needed during the test, but we'd like to use this opportunity to remind you what real alerts mean.",
       },
       {
         speaker: 'Announcer',

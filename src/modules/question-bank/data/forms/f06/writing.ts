@@ -64,7 +64,10 @@ export const sets: WritingSet[] = [
   bs('f06-wr-bs-parking-closed', 'hard', 'campus-life', 'Why is the parking lot behind the library closed?',
     ['Apparently,', 'the whole lot', 'needs', 'to be', 'repaved', 'before', 'the first snowfall'], '.',
     'Infinitivo pasivo tras "need": "needs to be repaved" (necesita ser repavimentado), porque el estacionamiento recibe la acción. Tras "to be" se usa el participio ("repaved"), no la forma en -ing.',
-    { distractors: ['repaving'] }),
+    {
+      distractors: ['repaving'],
+      acceptedOrders: [['Apparently,', 'before', 'the first snowfall', 'the whole lot', 'needs', 'to be', 'repaved']],
+    }),
   bs('f06-wr-bs-study-abroad', 'hard', 'campus-life', 'Do you regret not studying abroad last year?',
     ['Yes,', 'I wish', 'I had', 'applied for', 'the exchange program', 'when I', 'had the chance'], '.',
     '"Wish + pasado perfecto" expresa arrepentimiento sobre el pasado: "I wish I had applied" (ojalá hubiera solicitado). "I have" (presente perfecto) no es posible después de "wish".',
@@ -91,7 +94,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      "Dear Mr. Brooks,\n\nI am a senior in the environmental science program, and I am writing to ask whether the library could purchase a recently published book, Cooling the City: Green Infrastructure and Urban Heat. My senior research project examines how tree cover affects summer temperatures in different neighborhoods, and this book contains the most up-to-date data and case studies on that topic. Unfortunately, the library does not currently own a copy.\n\nI believe the book would be valuable for other students as well. It would fit naturally into courses such as Urban Ecology and Climate Policy, and graduate students in geography could also use it for their own research.\n\nCould you please tell me how to submit a formal purchase request? I would also like to know how long the process usually takes, since my project is due in April.\n\nThank you for your time.\n\nSincerely,\nLaura Kim",
+      "Dear Mr. Brooks,\n\nI am a senior in the environmental science program, and I am writing to ask whether the library could purchase a recently published book, Cooling the City: Green Infrastructure and Urban Heat. My senior research project examines how tree cover affects summer temperatures in different neighborhoods, and this book contains the most up-to-date data and case studies on that topic.\n\nI believe the book would be valuable for other students as well. It would fit naturally into courses such as Urban Ecology and Climate Policy, and geography graduate students could use it for their own research.\n\nCould you please tell me how to submit a formal purchase request? I would also like to know how long the process usually takes, since my project is due in April.\n\nThank you for your time.\n\nSincerely,\nLaura Kim",
   },
 
   // ---------- Academic Discussion ----------

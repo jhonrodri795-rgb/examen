@@ -31,8 +31,8 @@ export const sets: WritingSet[] = [
   // ---------- Build a Sentence ----------
   bs('f05-wr-bs-fire-alarm', 'easy', 'campus-life', 'Where were you when the fire alarm went off?',
     ['I was', 'studying in', 'the library', 'when the alarm', 'went off'], '.',
-    'Pasado continuo interrumpido por "when": la acción en curso ("I was studying") se ve interrumpida por una acción breve en pasado simple ("when the alarm went off").',
-    { distractors: ['studied in'] }),
+    'Pasado continuo interrumpido por "when": la acción en curso ("I was studying") se ve interrumpida por una acción breve en pasado simple ("when the alarm went off"). También se acepta empezar por la cláusula con "when" ("When the alarm went off, I was studying in the library").',
+    { distractors: ['studied in'], acceptedOrders: [['when the alarm', 'went off', 'I was', 'studying in', 'the library']] }),
   bs('f05-wr-bs-biggest-rooms', 'easy', 'campus-life', 'Which dorm has the biggest rooms?',
     ['I think', 'Birch Hall', 'has the', 'largest rooms', 'on campus'], '.',
     'Adjetivo superlativo: "the + adjetivo-est" ("the largest rooms"), a menudo seguido del ámbito de comparación ("on campus"). "Larger" es comparativo y no encaja con "the… on campus".',

@@ -534,8 +534,8 @@ export const sets: ListeningSet[] = [
         kind: 'single',
         skill: 'detail',
         prompt: 'How many credits does a student earn for a study that lasts ninety minutes?',
-        options: ['One credit', 'Two credits', 'Four credits', 'Three credits'],
-        answer: [3],
+        options: ['One credit', 'Two credits', 'Three credits', 'Four credits'],
+        answer: [2],
         explanation:
           '"Each half hour of participation counts as one credit"; noventa minutos son tres medias horas, es decir, tres créditos. "Two credits" (B) corresponde al ejemplo de un estudio de una hora.',
       },

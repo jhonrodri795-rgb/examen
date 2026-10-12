@@ -43,8 +43,12 @@ export const sets: WritingSet[] = [
     'Estructura "too + adjetivo + (for + persona) + to + infinitivo": "too heavy for me to carry" (demasiado pesada para que yo la cargue). "By myself" equivale a "alone".'),
   bs('history-essay', 'medium', 'Classmate', 'Have you started your history essay yet?',
     ['Yes, I have', 'already', 'written', 'the first', 'two pages'], '.',
-    'Presente perfecto con "already": have + already + participio ("have already written"). "Already" también puede ir al final de la frase. "Wrote" es pasado simple y no sirve tras "have".',
-    { distractors: ['wrote'], acceptedOrders: [['Yes, I have', 'written', 'the first', 'two pages', 'already']], topic: 'campus-life' }),
+    'Presente perfecto con "already": have + already + participio ("have already written"). "Already" también puede ir al final de la frase, y se acepta "I have the first two pages (already) written" (have + objeto + participio). "Wrote" es pasado simple y no sirve tras "have".',
+    { distractors: ['wrote'], acceptedOrders: [
+      ['Yes, I have', 'written', 'the first', 'two pages', 'already'],
+      ['Yes, I have', 'the first', 'two pages', 'already', 'written'],
+      ['Yes, I have', 'the first', 'two pages', 'written', 'already'],
+    ], topic: 'campus-life' }),
   bs('photography-class', 'medium', 'Classmate', 'Why are you taking a photography class?',
     ["I'm taking it", 'to improve', 'the photos', 'that I post', 'on my travel blog'], '.',
     'Infinitivo de propósito: "to improve" expresa la finalidad (para mejorar). En inglés no se dice "for improve"; tras "for" iría un sustantivo o un gerundio.',
@@ -90,7 +94,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      "Dear Rosa,\n\nMy name is Marco Silva, and I joined the Outdoor Adventure Club last week. Unfortunately, I missed the first meeting because of a lab session, but I am very excited about the camping trip next month. I have some outdoor experience: I went hiking with my family almost every summer, and last year I spent three nights camping in a national park with friends. However, I have never camped in cold weather.\n\nCould you tell me what equipment I should bring? I already have a sleeping bag and a backpack, but I do not own a tent or a camping stove, so I would like to know whether the club provides them.\n\nAlso, I have a car with room for four people, so I would be glad to drive any members who need a ride.\n\nThank you, and I look forward to meeting everyone.\n\nBest regards,\nMarco",
+      "Dear Rosa,\n\nMy name is Marco Silva, and I joined the Outdoor Adventure Club last week. Unfortunately, I missed the first meeting because of a lab session, but I am excited about next month's camping trip. I have some outdoor experience: I went hiking with my family almost every summer, and last year I spent three nights camping in a national park with friends.\n\nCould you tell me what equipment I should bring? I already have a sleeping bag and a backpack, but I do not own a tent or a camping stove, so I wonder whether the club provides them.\n\nAlso, I have a car with room for four people, so I would be glad to drive any members who need a ride.\n\nThank you, and I look forward to meeting everyone.\n\nBest regards,\nMarco",
   },
 
   // ---------- Academic Discussion ----------
@@ -119,6 +123,6 @@ export const sets: WritingSet[] = [
     recommendedWords: [100, 150],
     timeLimitSec: 600,
     sampleResponse:
-      "Although Daniel is right that a factory can create jobs quickly, I agree with Sofia that supporting small businesses is the wiser long-term strategy. My main reason is diversity. If a region depends on a single large employer, its whole economy is tied to one company and one industry. When demand for that product falls, the entire region suffers, as many former manufacturing towns have discovered. By contrast, a hundred small firms in different sectors, such as food, repair services, and software, are unlikely to fail at the same time. In addition, small businesses help local people develop management skills, which makes the region better at creating new companies in the future. To respond to Daniel's concern about speed, the government could combine its grants with job-training programs so that new businesses can hire workers sooner. That way, the region would gain jobs now while building a stronger economic foundation.",
+      "Although Daniel is right that a factory can create jobs quickly, I agree with Sofia that supporting small businesses is the wiser long-term strategy. My main reason is diversity. If a region depends on a single large employer, its whole economy is tied to one company and one industry. When demand for that product falls, the entire region suffers, as many former manufacturing towns have discovered. By contrast, a hundred small firms in different sectors, such as food, repair services, and software, are unlikely to fail at the same time. Small businesses also help local people develop management skills, which helps the region create new companies in the future. To respond to Daniel's concern about speed, the government could combine its grants with job-training programs so that new businesses can hire workers sooner. That way, the region would gain jobs now while building a stronger economic foundation.",
   },
 ];

@@ -535,7 +535,7 @@ export const sets: ReadingSet[] = [
         ],
         answer: [1],
         explanation:
-          'Los compradores pagan "only an average price", y los dueños de coches buenos "find it too low and decide to keep their vehicles". La opción 3 es incorrecta porque los vendedores sí conocen la calidad de su coche.',
+          'Los compradores pagan "only an average price", y los dueños de coches buenos "find it too low and decide to keep their vehicles". La opción de que temen que su coche resulte ser un "lemon" es incorrecta porque los vendedores sí conocen la calidad de su coche.',
       },
       {
         id: 'f08-rd-ap-market-for-lemons-q3',

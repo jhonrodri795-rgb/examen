@@ -40,8 +40,8 @@ export const sets: WritingSet[] = [
     '"Enough" va después del adjetivo: "thick enough", no "enough thick". Con sustantivos es al revés ("enough time").',
     { distractors: ['enough thick'] }),
   bs('f04-wr-bs-leave-early', 'easy', 'daily-life', 'Classmate', 'Why do you have to leave so early today?',
-    ['I have', 'to pick up', 'my little sister', 'from her', 'piano lesson'], '.',
-    '"Have to + infinitivo" expresa una obligación externa: "I have to pick up…". El objeto ("my little sister") va tras el verbo con partícula "pick up".'),
+    ['I have to', 'pick up', 'my little sister', 'from her', 'piano lesson'], '.',
+    '"Have to + infinitivo" expresa una obligación externa: "I have to pick up…". El objeto ("my little sister") va tras el verbo con partícula "pick up", y "from her piano lesson" indica de dónde la recoges.'),
   bs('f04-wr-bs-bus-wait', 'medium', 'daily-life', 'Friend', 'How long have you been waiting for the bus?',
     ['I have', 'been waiting', 'for', 'over twenty minutes,', "and I'm freezing"], '.',
     'Presente perfecto continuo ("have been waiting") con "for" + periodo de tiempo ("for over twenty minutes"). "Since" se usa con un punto de inicio (since 3:00), no con una duración.',
@@ -92,7 +92,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [90, 150],
     timeLimitSec: 420,
     sampleResponse:
-      "Dear Ms. Chen,\n\nI hope you are doing well. I am writing about my schedule for the next two weeks. My final exams run from December 8 to December 19, and three of them begin at 8:00 a.m. Unfortunately, I have been assigned evening shifts on December 9, 11, and 16, which end at 11:00 p.m., the night before some of my most important exams.\n\nWould it be possible for me to work different shifts instead? I am free on Saturday and Sunday mornings, and I could also take the 7:00 to 11:00 a.m. shift on December 12 and 18, when I have no exams.\n\nI would also be glad to help find someone to cover my evening shifts. Jordan and Priya have both mentioned that they would like extra hours, so I could ask them today and let you know by Friday.\n\nThank you for your understanding.\n\nBest regards,\nDaniel",
+      "Dear Ms. Chen,\n\nI hope you are doing well. I am writing about my schedule for the next two weeks. My final exams run from December 8 to December 19, and three of them begin at 8:00 a.m. I have been assigned evening shifts on December 9, 11, and 16, which end at 11:00 p.m., the night before some of my most important exams.\n\nWould it be possible for me to work different shifts instead? I am free on Saturday and Sunday mornings, and I could also take the 7:00 to 11:00 a.m. shift on December 12 and 18, when I have no exams.\n\nI would also be glad to help find someone to cover my evening shifts. Jordan and Priya have mentioned that they would like extra hours, so I could ask them today and let you know by Friday.\n\nThank you for your understanding.\n\nBest regards,\nDaniel",
   },
 
   // ---------- Academic Discussion ----------
@@ -121,6 +121,6 @@ export const sets: WritingSet[] = [
     recommendedWords: [100, 150],
     timeLimitSec: 600,
     sampleResponse:
-      'Although Lucas makes a fair point about students who simply collect signatures, I agree with Emma that community service should be a graduation requirement. My main reason is that many teenagers do not know which volunteer opportunities exist, or they feel too shy to contact an organization on their own. A requirement gives them a reason to take that first step, and some of them discover interests that shape their future. For example, a friend of mine started volunteering at a food bank only because of the rule, and she is now studying public health. However, Lucas is right that the requirement should not burden students who have jobs or family duties. Schools could solve this by counting caregiving or work for community organizations as service and by offering short projects during school hours. With that flexibility, the requirement would open doors without punishing students who already carry heavy responsibilities.',
+      'Although Lucas makes a fair point about students who just collect signatures, I agree with Emma that community service should be a graduation requirement. My main reason is that many teenagers do not know which volunteer opportunities exist, or they feel too shy to contact an organization on their own. A requirement gives them a reason to take that first step, and some of them discover interests that shape their future. For example, a friend of mine started volunteering at a food bank only because of the rule, and she is now studying public health. However, Lucas is right that the requirement should not burden students who have jobs or family duties. Schools could solve this by counting caregiving or work for community organizations as service and by offering short projects during school hours. With that flexibility, the requirement would open doors without punishing students who already carry heavy responsibilities.',
   },
 ];

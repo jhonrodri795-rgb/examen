@@ -125,8 +125,8 @@ export const sets: ListeningSet[] = [
     'The square is just behind the library.',
     "Great, so we're almost finished with it.",
     "I'll be back here in about one hour.",
-    "Then let's start over and resend it.",
-  ], 3, '"Back to square one" significa volver a empezar desde cero. La respuesta lógica propone repetir la encuesta ("start over"). "Great, so we\'re almost finished" interpreta el modismo al revés.'),
+    "Then we'll have to run the survey again.",
+  ], 3, '"Back to square one" significa volver a empezar desde cero. La respuesta lógica acepta que hay que repetir la encuesta ("run the survey again"). "Great, so we\'re almost finished" interpreta el modismo al revés.'),
   cr('heavy-box', 'hard', 'male', 'This box is a lot heavier than I expected.', [
     'I expected it to rain this afternoon.',
     'Yes, it weighs about the same as mine.',
@@ -257,7 +257,7 @@ export const sets: ListeningSet[] = [
         ],
         answer: [3],
         explanation:
-          'Ethan quiere hablar "about the dress rehearsal next Thursday" porque tiene que viajar a la boda de su hermana. Los solos se mencionan después, como parte de la solución del profesor.',
+          'Ethan quiere hablar "about the dress rehearsal next Thursday" porque tiene que viajar a la boda de su hermana. Los solos se mencionan después, como parte de la solución de la directora.',
       },
       {
         id: 'f02-ls-cv-dress-rehearsal-q2',
@@ -377,7 +377,7 @@ export const sets: ListeningSet[] = [
       {
         speaker: 'Announcer',
         voice: 'female',
-        text: "Attention, students and staff. This is an announcement from Parking Services. Beginning next Monday, Parking Lot B, behind the science building, will be closed for repaving. The work is expected to take five days, and the lot should reopen the following Monday. During the closure, drivers with a Lot B permit may park in Lot D, next to the stadium. You don't need a new permit; simply display your current one. Because Lot D is farther from the main buildings, a free shuttle will run from Lot D to the science building every ten minutes between seven a.m. and six p.m. Any vehicles left in Lot B after Sunday night will be towed at the owner's expense. Thank you for your patience.",
+        text: "Attention, students and staff. This is an announcement from Parking Services. Beginning next Monday, Parking Lot B, behind the science building, will be closed for repaving. The work is expected to take five days, and the lot should reopen the following Monday. During the closure, drivers with a Lot B permit may park in Lot D, next to the stadium. You don't need a new permit; simply display your current one. Because Lot D is farther from the main buildings, a free shuttle will run from Lot D to the science building every ten minutes from seven in the morning until six in the evening Any vehicles left in Lot B after Sunday night will be towed at the owner's expense. Thank you for your patience.",
       },
     ],
     questions: [

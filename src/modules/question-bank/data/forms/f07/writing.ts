@@ -58,7 +58,7 @@ export const sets: WritingSet[] = [
   bs('f07-wr-bs-bike-campus', 'medium', 'Classmate', 'Do you still bike to campus every day?',
     ['I do,', 'even though', 'the hill', 'near my apartment', 'is really steep'], '.',
     'Concesión con "even though" (aunque) + oración completa (sujeto + verbo): "even though the hill … is really steep". "Despite" iría seguido de un sustantivo o de un gerundio, no de una oración con verbo conjugado.',
-    { distractors: ['despite'] }),
+    { distractors: ['despite'], acceptedOrders: [['I do,', 'even though', 'the hill', 'is really steep', 'near my apartment']] }),
   bs('f07-wr-bs-transcript', 'hard', 'Classmate', "The registrar's office just emailed me about my transcript.",
     ['Did they say', 'whether', 'the mistake', 'in your grades', 'has been', 'corrected'], '?',
     'Pregunta indirecta tras "Did they say": la cláusula con "whether" mantiene el orden afirmativo (sujeto + verbo: "whether the mistake … has been corrected"). El verbo concuerda con "the mistake" (singular), no con "grades", por eso "have been" es incorrecto. El complemento "in your grades" también puede ir al final.',
@@ -93,7 +93,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      "Dear Dr. Nair,\n\nI hope you are doing well. I am a third-year economics student, and I am thinking about adding a minor in computer science. Last semester I took an introductory programming class and discovered that I really enjoy writing code to analyze data. I believe these skills would make me a much stronger candidate for jobs in financial analysis.\n\nHowever, I only have three semesters left, so I am worried that I might not finish the minor in time. Could you tell me which courses are required? I have already completed Introduction to Programming and Statistics for Economists, and I would like to know whether either of them will count toward the minor.\n\nWould you be available to meet next Tuesday at 2 p.m.? If that does not suit you, I am also free on Wednesday morning.\n\nThank you for your help.\n\nBest regards,\nDaniel",
+      "Dear Dr. Nair,\n\nI am a third-year economics student, and I am thinking about adding a minor in computer science. Last semester I took an introductory programming class and discovered that I really enjoy writing code to analyze data. I believe these skills would strengthen my applications for jobs in financial analysis.\n\nHowever, I only have three semesters left, so I am worried that I might not finish the minor in time. Could you tell me which courses are required? I have already completed Introduction to Programming and Statistics for Economists; will either of them count toward the minor?\n\nWould you be available to meet next Tuesday at 2 p.m.? If that does not suit you, I am also free on Wednesday morning.\n\nThank you for your help.\n\nBest regards,\nDaniel",
   },
 
   // ---------- Academic Discussion ----------

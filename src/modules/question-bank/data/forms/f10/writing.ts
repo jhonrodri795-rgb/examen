@@ -50,7 +50,7 @@ export const sets: WritingSet[] = [
   bs('f10-wr-bs-welcome-speech', 'medium', 'campus-life', 'Classmate', 'Who is the student giving the welcome speech?',
     ["She's the", 'junior', 'who won', 'the poetry prize', 'last spring'], '.',
     'Oración de relativo con "who" para personas: "the junior who won the poetry prize". "Which" se usa para cosas, por eso sobra "which won".',
-    { distractors: ['which won'] }),
+    { distractors: ['which won'], acceptedOrders: [["She's the", 'junior', 'who won', 'last spring', 'the poetry prize']] }),
   bs('f10-wr-bs-group-survey', 'medium', 'campus-life', 'Classmate', 'Did you finish the group survey yet?',
     ['Almost, but', 'I need to', 'proofread it', 'before sending', 'it to everyone'], '.',
     'Tras una preposición como "before" se usa el gerundio (-ing): "before sending it". "Before send" es incorrecto porque la preposición no admite el infinitivo sin "to".',
@@ -93,7 +93,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      "Dear Mrs. Patel,\n\nMy name is Lucía Romero, and I moved into apartment 4B, right next to yours, about two months ago. I hope you are enjoying the building as much as I am.\n\nI wanted to mention something I have noticed. On weekday afternoons, while you are at work, your dog barks for long periods, often from about one o'clock until five. I am a university student and do most of my studying at home in the afternoons, so the noise makes it hard for me to concentrate, especially before exams.\n\nI am sure you were not aware of this, and I would like to find a solution that works for both of us. Perhaps a dog walker could take him out in the early afternoon, or I could keep him company for a while on my study breaks. Please let me know what you think.\n\nKind regards,\nLucía",
+      "Dear Mrs. Patel,\n\nMy name is Lucía Romero, and I moved into apartment 4B, right next to yours, two months ago.\n\nI wanted to mention something I have noticed. On weekday afternoons, while you are at work, your dog barks for long periods, often from about one o'clock until five. I am a university student and do most of my studying at home in the afternoons, so the noise makes it hard for me to concentrate, especially before exams.\n\nI am sure you were not aware of this, and I would like a solution that works for both of us. Perhaps a dog walker could take him out in the early afternoon, or I could keep him company for a while on my study breaks. Please let me know what you think.\n\nKind regards,\nLucía",
   },
 
   // ---------- Academic Discussion ----------

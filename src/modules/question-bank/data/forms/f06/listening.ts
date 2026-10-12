@@ -549,7 +549,7 @@ export const sets: ListeningSet[] = [
     difficulty: 'easy',
     context: 'Listen to part of a lecture in a biology class.',
     script: [
-      { speaker: 'Professor', voice: 'female', text: "Last time, we talked about relationships in which one species benefits at the expense of another. Today, let's look at mutualism, where both partners benefit. One of the best examples comes from coral reefs: a small fish called the cleaner wrasse. It's only about ten centimeters long, with a bright blue stripe along its body." },
+      { speaker: 'Professor', voice: 'female', text: "Last time, we talked about relationships in which one species benefits at the expense of another. Today, let's look at mutualism, where both partners benefit. One of the best examples comes from coral reefs: a small fish called the cleaner wrasse. It's only about ten centimeters long, with a black stripe running the length of its body." },
       { speaker: 'Professor', voice: 'female', text: 'Cleaner wrasse set up what biologists call cleaning stations, particular spots on the reef that they occupy day after day. Larger fish, which we call clients, swim to these stations and hold very still. Some even open their mouths and gills. The wrasse then moves over their bodies and picks off parasites, mainly tiny crustaceans attached to the skin, along with dead or damaged tissue.' },
       { speaker: 'Professor', voice: 'female', text: "So what does each side get? The wrasse gets a steady supply of food; a single cleaner can inspect more than a thousand clients in one day. The client gets rid of parasites, which could otherwise weaken it or cause infections. And here's the remarkable part: some clients are predators, like groupers, that would normally eat a fish this size. Yet they let the cleaner swim right inside their mouths without harming it." },
       { speaker: 'Professor', voice: 'female', text: "Now, the relationship isn't perfectly honest. Cleaner wrasse actually prefer to eat the protective mucus that covers the client's skin, and taking a bite of it hurts the client. When that happens, the client often jolts or chases the cleaner away. Researchers have found that cleaners behave better when other potential clients are watching, a bit like a shop owner who is extra polite when customers are lined up outside." },
@@ -624,11 +624,11 @@ export const sets: ListeningSet[] = [
     difficulty: 'medium',
     context: 'Listen to part of a lecture in a linguistics class.',
     script: [
-      { speaker: 'Professor', voice: 'male', text: "Today I want to look at an unusual channel for language: whistling. In a number of communities around the world, people hold real conversations by whistling. Linguists call these whistled languages, but the name is a little misleading. A whistled language isn't a separate language. It's an ordinary spoken language transferred into whistles." },
+      { speaker: 'Professor', voice: 'male', text: "Today I want to look at an unusual channel for language: whistling. In some communities, people hold real conversations by whistling. Linguists call these whistled languages, though a whistled language isn't really a separate language. It's an ordinary spoken language transferred into whistles." },
       { speaker: 'Professor', voice: 'male', text: 'The best-known case is Silbo Gomero, a whistled form of Spanish from La Gomera, one of the Canary Islands. The island is cut by deep ravines, so walking to a farm across a valley can take a long time, while a whistle crosses it in seconds. Shepherds and farmers used Silbo to send news and warnings over distances that can reach a few kilometers.' },
       { speaker: 'Professor', voice: 'male', text: "So why does a whistle carry so well? A shout spreads its energy across many pitches, and much of it is low enough to be drowned out by wind and running water. A whistle concentrates its energy in a narrow band of fairly high pitch, so it stands out. Think of a noisy stadium: you can't pick out any single voice, but you can always hear the referee's whistle." },
       { speaker: 'Student', voice: 'female', text: 'But a whistle is only one note at a time. How can it carry whole words?' },
-      { speaker: 'Professor', voice: 'male', text: "It can't copy everything the voice does, but it can rise, fall, and break off. Since Spanish isn't a tonal language, Silbo whistlers imitate the way the mouth shapes vowels. A vowel like the one in the English word see becomes a high pitch, while a vowel like the one in go is much lower. Consonants become breaks and quick slides between pitches. In tonal languages, like Mazatec in Mexico, whistlers follow the melody of the tones instead." },
+      { speaker: 'Professor', voice: 'male', text: "It can't copy everything the voice does, but it can rise, fall, and break off. Since Spanish isn't tonal, Silbo whistlers imitate how the mouth shapes vowels: a vowel like the one in the English word see becomes a high pitch, while the vowel in go is much lower. Consonants become breaks and quick slides between pitches. In tonal languages, like Mazatec in Mexico, whistlers follow the melody of the tones instead." },
       { speaker: 'Professor', voice: 'male', text: "Of course, whistling simplifies the sounds, so some words end up sounding alike, and listeners lean heavily on context. That works well for the routine, predictable messages whistlers usually exchange. Silbo declined in the twentieth century, as roads and telephones arrived and young people moved away. But today it's a required subject in the island's schools, and UNESCO has recognized it as part of humanity's cultural heritage." },
     ],
     questions: [
@@ -727,7 +727,7 @@ export const sets: ListeningSet[] = [
         skill: 'detail',
         prompt: 'According to the professor, why can a traditional kintsugi repair take months?',
         options: [
-          'Each thin layer of lacquer must cure before the next.',
+          'Each layer of lacquer must cure before the next.',
           'The lacquer has to dry out fully in a warm, dry room.',
           'The gold has to be mixed slowly into every layer.',
           'The raw sap must first lose its power to irritate.',

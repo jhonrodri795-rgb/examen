@@ -301,7 +301,7 @@ export const sets: ListeningSet[] = [
     difficulty: 'hard',
     context: 'Listen to a conversation between two students who are writing a history paper together.',
     script: [
-      { speaker: 'Elena', voice: 'female', text: "I've hit a problem with our section on the psalter. The museum catalog dates the manuscript to around 1150, but the article by Dr. Weiss puts it closer to 1200." },
+      { speaker: 'Elena', voice: 'female', text: "I've hit a problem with our section on the psalter. The museum catalog dates the manuscript to around eleven fifty, but the article by Doctor Weiss puts it closer to twelve hundred." },
       { speaker: 'Marcus', voice: 'male', text: "Fifty years is a big gap. What does each one base its date on?" },
       { speaker: 'Elena', voice: 'female', text: "The catalog relies on the handwriting. The script looks like what scribes in that region used in the mid-twelfth century. Weiss argues from the illustrations. She says that style of painting the figures didn't appear until later." },
       { speaker: 'Marcus', voice: 'male', text: 'So maybe both are right, in a way. Could the text have been copied first and the pictures added decades later? That happened sometimes, right?' },
@@ -327,7 +327,7 @@ export const sets: ListeningSet[] = [
         ],
         answer: [3],
         explanation:
-          'El problema es que el catálogo fecha el manuscrito "around 1150" y el artículo "closer to 1200"; deciden cómo presentar ese desacuerdo en el trabajo. Las correcciones del texto son un detalle, no el tema.',
+          'El problema es que el catálogo fecha el manuscrito "around eleven fifty" (hacia 1150) y el artículo "closer to twelve hundred" (hacia 1200); deciden cómo presentar ese desacuerdo en el trabajo. Las correcciones del texto son un detalle, no el tema.',
       },
       {
         id: 'f04-ls-cv-manuscript-dates-q2',

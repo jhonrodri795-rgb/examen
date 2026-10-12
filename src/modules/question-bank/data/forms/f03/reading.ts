@@ -554,7 +554,7 @@ export const sets: ReadingSet[] = [
         options: ['observance', 'objection', 'concentration', 'addition'],
         answer: [0],
         explanation:
-          '"Rigid adherence to procedure" es el cumplimiento estricto de las normas, es decir, "observance"; el ejemplo lo confirma: "officials follow regulations". "Attention" (atención) no implica obedecer.',
+          '"Rigid adherence to procedure" es el cumplimiento estricto de las normas, es decir, "observance"; el ejemplo lo confirma: "officials follow regulations". "Concentration" (concentración) no implica obedecer, y "objection" significa lo contrario.',
       },
       {
         id: 'f03-rd-ap-bureaucracy-q5',

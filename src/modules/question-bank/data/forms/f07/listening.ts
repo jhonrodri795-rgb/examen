@@ -114,13 +114,13 @@ export const sets: ListeningSet[] = [
   ], 1, 'La pregunta coletilla ("didn\'t forget…, did you?") expresa preocupación. "No, it\'s right here in my bag" la tranquiliza. "Yes, you forgot it" cambia la persona (you en lugar de I) y la longitud del cable no responde.'),
 
   // ---------- Choose a Response: hard ----------
-  cr('f07-ls-cr-morning-workout', 'hard', 'male', "A six a.m. workout? I'm not really much of a morning person.", [
+  cr('f07-ls-cr-morning-workout', 'hard', 'male', "A workout at six in the morning? I'm not really much of a morning person.", [
     "Great, so I'll see you at six tomorrow.",
     'Okay, how about we go after class instead?',
     'Yes, mornings are usually colder here.',
     'Right, the gym opens at six on weekdays.',
   ], 1, '"I\'m not really much of a morning person" es un rechazo indirecto de la propuesta. La respuesta adecuada ofrece otra hora: "how about we go after class instead?". "I\'ll see you at six tomorrow" ignora el rechazo implícito.', 'daily-life'),
-  cr('f07-ls-cr-pass-fail', 'hard', 'female', "Do you know if it's too late to switch the course to pass/fail?", [
+  cr('f07-ls-cr-pass-fail', 'hard', 'female', "Do you know if it's too late to switch the course to pass-fail?", [
     'Yes, I know a lot about that course.',
     'I passed it with a B last spring.',
     "No, I don't think you'll fail it.",

@@ -24,8 +24,8 @@ export const sets: ReadingSet[] = [
     topic: 'psychology',
     difficulty: 'medium',
     text:
-      'The mere exposure effect is the tendency to like things more simply because we have encountered them before. In a classic {{ser|ies}} of {{exper|iments}}, participants {{vie|wed}} unfamiliar {{sym|bols}}, faces, {{o|r}} words {{diff|erent}} numbers {{o|f}} times. Later, {{th|ey}} usually {{ra|ted}} the {{it|ems}} they had seen most often as more pleasant, even when they could not remember seeing them. Psychologists suggest that familiar stimuli are easier for the brain to process, and this ease feels positive. The effect helps explain why a song often grows on listeners after several plays. However, the effect weakens with excessive repetition, which can eventually lead to boredom.',
-    note: '«A series of» va seguido de sustantivo plural (experiments). El pasado simple (viewed, rated) narra el experimento, y «different numbers of times» significa «un número distinto de veces».',
+      'The mere exposure effect is the tendency to like things more simply because we have encountered them before. In a classic {{ser|ies}} of {{exper|iments}}, participants {{vie|wed}} unfamiliar {{sym|bols}}, faces, {{o|r}} words, {{so|me}} only {{on|ce}} and others up to twenty-five times. Later, {{th|ey}} usually {{ra|ted}} the {{it|ems}} they had seen most often as more pleasant, even when they could not remember seeing them. Psychologists suggest that familiar stimuli are easier for the brain to process, and this ease feels positive. The effect helps explain why a song often grows on listeners after several plays. However, the effect weakens with excessive repetition, which can eventually lead to boredom.',
+    note: '«A series of» va seguido de sustantivo plural (experiments). El pasado simple (viewed, rated) narra el experimento, y «some only once and others…» contrasta los estímulos vistos una sola vez («once») con los que se vieron muchas veces.',
   },
   {
     id: 'f05-rd-cw-price-elasticity',

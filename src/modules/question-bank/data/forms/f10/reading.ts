@@ -646,12 +646,12 @@ export const sets: ReadingSet[] = [
         options: [
           'They are usually sent by circuit switching.',
           'They cannot be carried over packet networks.',
-          'They use more capacity than e-mail does.',
+          'They are given lower priority than e-mail.',
           'They suffer more from uneven delivery times.',
         ],
         answer: [3],
         explanation:
-          'El texto dice que la variación en los tiempos de entrega "matters little for e-mail but can cause problems for live video calls". No afirma que no puedan viajar por redes de paquetes: los ingenieros les dan prioridad ("give time-sensitive packets priority").',
+          'El texto dice que la variación en los tiempos de entrega "matters little for e-mail but can cause problems for live video calls". No afirma que no puedan viajar por redes de paquetes: los ingenieros les dan prioridad ("give time-sensitive packets priority"), así que tampoco tienen menos prioridad que el correo.',
       },
       {
         id: 'f10-rd-ap-packet-switching-q5',

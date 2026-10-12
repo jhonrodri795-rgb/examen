@@ -81,12 +81,12 @@ export const sets: ListeningSet[] = [
     'The train station is downtown.',
     "Good thinking. I'll pack tonight, then.",
   ], 3, '"Why don\'t we…?" propone un plan; "Good thinking. I\'ll pack tonight, then" lo acepta y saca una consecuencia. "Because…" trata la sugerencia como una pregunta por la causa.', 'daily-life'),
-  cr('f05-ls-cr-room-number', 'medium', 'male', 'Sorry, did you say the meeting is in Room 210 or Room 201?', [
+  cr('f05-ls-cr-room-number', 'medium', 'male', 'Sorry, did you say the meeting is in Room two-ten or Room two-oh-one?', [
     'Two-ten, next to the elevator.',
     'Yes, I said that earlier.',
     'The meeting starts at two-ten.',
     "It's about the new room schedule.",
-  ], 0, 'Pide una aclaración entre dos números, así que hay que elegir uno: "Two-ten…". "The meeting is at two-ten" confunde el número de sala con una hora.'),
+  ], 0, 'Pide una aclaración entre dos números, así que hay que elegir uno: "Two-ten…". "The meeting starts at two-ten" confunde el número de sala con una hora.'),
   cr('f05-ls-cr-history-exam', 'medium', 'female', 'I thought the history exam was a lot easier than the last one.', [
     'The last one is on Thursday.',
     'I think history is in Room 5.',
@@ -143,7 +143,7 @@ export const sets: ListeningSet[] = [
     "No, it's not helpful at all, thanks.",
     "I'm helping with that course next term.",
   ], 1, '"If it\'s any help" es un ofrecimiento implícito de consejo; se acepta con "Great! Could I ask you a few questions?". "Did you take it last year too?" ignora lo que acaba de decir.'),
-  cr('f05-ls-cr-last-bus', 'hard', 'male', 'The last bus leaves at 11:15, you know.', [
+  cr('f05-ls-cr-last-bus', 'hard', 'male', 'The last bus leaves at eleven fifteen, you know.', [
     'Yes, I left at eleven fifteen yesterday.',
     'The bus stop is near the bookstore, right?',
     "Thanks. I'll leave before eleven, then.",
@@ -231,7 +231,7 @@ export const sets: ListeningSet[] = [
     difficulty: 'medium',
     context: 'Listen to a conversation between a student and a resident assistant.',
     script: [
-      { speaker: 'Student', voice: 'male', text: "Hi, Melissa. Do you have a minute? It's about the guy in Room 214, next to mine." },
+      { speaker: 'Student', voice: 'male', text: "Hi, Melissa. Do you have a minute? It's about the guy in Room two-fourteen, next to mine." },
       { speaker: 'Resident Assistant', voice: 'female', text: "Sure, come in. What's going on?" },
       { speaker: 'Student', voice: 'male', text: "He's been playing music really loud until two or three in the morning. It's exam week, and I have my statistics final on Thursday. I've barely slept." },
       { speaker: 'Resident Assistant', voice: 'female', text: "I'm sorry to hear that. During exam week, quiet hours start at eight p.m., so he really shouldn't be doing that. Have you said anything to him?" },

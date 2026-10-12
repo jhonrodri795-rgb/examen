@@ -93,7 +93,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      "Dear Residence Life Office,\n\nMy name is Daniela Ruiz, and I live in Room 314 of Oakwood Hall. I am writing about a problem that has been affecting my sleep. For the past five weeks, my roommate has been working night shifts at a hospital, and she usually comes home between one and two in the morning. Even though she tries to be quiet, the door and the lights wake me up almost every night, and I have 8 a.m. classes four days a week.\n\nWe have talked about this several times. She now gets ready for bed in the bathroom, and I bought earplugs and a sleep mask, but I still lose two or three hours of sleep each night.\n\nWould it be possible for me to move to another room, ideally with a roommate who keeps a similar schedule? I would be glad to meet with someone to discuss the options.\n\nThank you for your help.\n\nSincerely,\nDaniela Ruiz",
+      "Dear Residence Life Office,\n\nMy name is Daniela Ruiz, and I live in Room 314 of Oakwood Hall. For the past five weeks, my roommate has been working night shifts at a hospital, and she usually comes home around two in the morning. Although she tries to be quiet, the door and lights wake me up almost every night, and I have 8 a.m. classes four days a week.\n\nWe have discussed this several times. She now gets ready for bed in the bathroom, and I bought earplugs and a sleep mask, but I still lose two or three hours of sleep each night.\n\nWould it be possible for me to move to another room, ideally with a roommate who keeps a similar schedule? I would be happy to discuss the options.\n\nThank you.\n\nSincerely,\nDaniela Ruiz",
   },
 
   // ---------- Academic Discussion ----------

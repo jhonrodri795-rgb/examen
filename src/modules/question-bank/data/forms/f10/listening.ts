@@ -145,9 +145,9 @@ export const sets: ListeningSet[] = [
   cr('f10-ls-cr-picnic-weather', 'hard', 'female', 'Well, the weather could be better for a picnic.', [
     'True. Should we eat indoors instead?',
     "Yes, it's perfect picnic weather today.",
-    "I'd better bring more sunscreen, then.",
+    "Great, I'm glad you're enjoying the weather.",
     'We had a picnic here last summer.',
-  ], 0, '"Could be better" es un eufemismo: el tiempo es malo. La respuesta adecuada lo reconoce y propone una alternativa: "True. Should we eat indoors instead?" "It\'s perfect picnic weather" y "bring more sunscreen" entienden lo contrario de lo que implica la hablante (que hace mal tiempo).', 'daily-life'),
+  ], 0, '"Could be better" es un eufemismo: el tiempo es malo. La respuesta adecuada lo reconoce y propone una alternativa: "True. Should we eat indoors instead?" "It\'s perfect picnic weather" y "I\'m glad you\'re enjoying the weather" entienden lo contrario de lo que implica la hablante (que hace mal tiempo).', 'daily-life'),
   cr('f10-ls-cr-heads-up', 'hard', 'male', "I'd appreciate a heads-up next time you invite people over.", [
     'Thanks, I really appreciate your help too.',
     "Sure, I'll look up when they arrive.",

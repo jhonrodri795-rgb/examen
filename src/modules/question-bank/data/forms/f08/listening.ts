@@ -100,12 +100,12 @@ export const sets: ListeningSet[] = [
     "Yes, so I'm finishing my essay this weekend.",
     "No, I don't like Mondays either.",
   ], 2, 'La pregunta negativa ("Isn\'t the deadline…?") busca confirmar un dato. "Yes, so I\'m finishing my essay this weekend" lo confirma y añade una consecuencia lógica. "No, I don\'t like Mondays either" responde a algo que no se preguntó.'),
-  cr('f08-ls-cr-airport-ride', 'medium', 'female', 'I can drive you to the airport on Friday if you can leave by 6 a.m.', [
+  cr('f08-ls-cr-airport-ride', 'medium', 'female', 'I can drive you to the airport on Friday if you can leave by six a.m.', [
     "I've never been to that airport before.",
     'I usually drive to work at six.',
     'Yes, I left at six yesterday.',
     "Great, I'll be ready before six.",
-  ], 3, 'Es un ofrecimiento con condición ("if you can leave by 6 a.m."). La respuesta adecuada acepta la condición: "Great, I\'ll be ready before six". "Yes, I left at six yesterday" usa el pasado y no responde al plan del viernes.', 'daily-life'),
+  ], 3, 'Es un ofrecimiento con condición ("if you can leave by six a.m."). La respuesta adecuada acepta la condición: "Great, I\'ll be ready before six". "Yes, I left at six yesterday" usa el pasado y no responde al plan del viernes.', 'daily-life'),
   cr('f08-ls-cr-banquet-speech', 'medium', 'male', "I'm so nervous about giving the speech at the club banquet tomorrow.", [
     'The banquet food was really great last year.',
     "You'll be great. Want to practice on me?",
@@ -711,7 +711,7 @@ export const sets: ListeningSet[] = [
         ],
         answer: [2],
         explanation:
-          'Ante un fuego lento ("a slow, smoldering fire"), las alarmas fotoeléctricas "usually detect that kind of fire earlier, sometimes much earlier". Se deduce que una casa con solo una alarma de ionización podría recibir el aviso más tarde en ese caso. Las de ionización sí responden, incluso antes, a los fuegos con llama.',
+          'Ante un fuego lento ("slow, smoldering fire"), las alarmas fotoeléctricas "usually detect that kind of fire earlier, sometimes much earlier". Se deduce que una casa con solo una alarma de ionización podría recibir el aviso más tarde en ese caso. Las de ionización sí responden, incluso antes, a los fuegos con llama.',
       },
     ],
   },

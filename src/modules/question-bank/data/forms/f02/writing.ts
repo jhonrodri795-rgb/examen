@@ -66,11 +66,11 @@ export const sets: WritingSet[] = [
     'Pregunta indirecta con "whether" tras "I don\'t know": la cláusula mantiene el orden afirmativo (sujeto + verbo: "the organizers have set"), no el orden interrogativo "have the organizers set".',
     { distractors: ['have the organizers'] }),
   bs('new-bike', 'hard', 'A Bike That Looks Brand New', 'Friend', 'Your bike looks brand new!',
-    ['I', 'had', 'the frame', 'repainted', 'and', 'the tires', 'replaced'], '.',
-    'Causativa "have + objeto + participio": otra persona hizo el trabajo ("I had the frame repainted"). Las dos partes coordinadas pueden intercambiarse: "had the tires replaced and the frame repainted".',
+    ['I', 'just had', 'the frame', 'repainted', 'and', 'the tires', 'replaced'], '.',
+    'Causativa "have + objeto + participio": otra persona hizo el trabajo ("I just had the frame repainted"). Las dos partes coordinadas pueden intercambiarse: "just had the tires replaced and the frame repainted". "Repainting" no sirve: tras el objeto se necesita el participio.',
     {
       distractors: ['repainting'],
-      acceptedOrders: [['I', 'had', 'the tires', 'replaced', 'and', 'the frame', 'repainted']],
+      acceptedOrders: [['I', 'just had', 'the tires', 'replaced', 'and', 'the frame', 'repainted']],
       topic: 'daily-life',
     }),
   bs('scholarship-deadline', 'hard', 'A Missed Scholarship Deadline', 'Classmate', 'I missed the scholarship deadline by one day.',
@@ -99,7 +99,7 @@ export const sets: WritingSet[] = [
     recommendedWords: [80, 140],
     timeLimitSec: 420,
     sampleResponse:
-      'Dear Mr. Price,\n\nI am writing to report that the heating in Apartment 4B has stopped working. The radiators suddenly went cold on Monday evening, two days ago, and they have not come back on since then, even though we checked the thermostat and reset the circuit breaker.\n\nAs you know, temperatures have dropped below freezing this week, so the apartment has become extremely cold. My roommate and I have been wearing our coats indoors, and it is very hard to sleep or study at home. My roommate also has a bad cold, which seems to be getting worse.\n\nCould you please let me know when a technician will be able to repair the system? In the meantime, would it be possible to lend us two portable electric heaters? We would be happy to pick them up from your office.\n\nThank you for your help.\n\nSincerely,\nLaura Méndez',
+      'Dear Mr. Price,\n\nI am writing to report that the heating in Apartment 4B has stopped working. The radiators went cold on Monday evening, two days ago, and they have not come back on, even though we checked the thermostat and reset the circuit breaker.\n\nTemperatures have dropped below freezing this week, so the apartment has become extremely cold. My roommate and I have been wearing our coats indoors, and it is very hard to sleep or study at home. My roommate also has a bad cold, which seems to be getting worse.\n\nCould you please let me know when a technician will be able to repair the system? In the meantime, could you lend us two portable electric heaters? We can pick them up from your office.\n\nThank you for your help.\n\nSincerely,\nLaura Méndez',
   },
 
   // ---------- Academic Discussion ----------
